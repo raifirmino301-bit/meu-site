@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Estuda Fácil</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f5ff;
+  color: #202124;
+}
+
+header {
+  background: linear-gradient(135deg, #5146e5, #7667ff);
+  color: white;
+  padding: 30px 20px;
+  border-radius: 0 0 30px 30px;
+  box-shadow: 0 5px 20px #5146e555;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 32px;
+}
+
+header p {
+  font-size: 17px;
+  margin-bottom: 0;
+}
+
+main {
+  max-width: 520px;
+  margin: auto;
+  padding: 22px;
+}
+
+.tela {
+  display: none;
+}
+
+.tela.ativa {
+  display: block;
+}
+
+h2 {
+  font-size: 27px;
+}
+
+.materia {
+  width: 100%;
+  background: white;
+  border: none;
+  border-radius: 20px;
+  padding: 20px;
+  margin: 9px 0;
+  font-size: 19px;
+  text-align: left;
+  box-shadow: 0 5px 18px #00000012;
+}
+
+.materia:active,
+.opcao:active {
+  transform: scale(.98);
+}
+
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.voltar {
+  width: auto;
+  background: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 15px;
+  font-size: 16px;
+}
+
+.pontos {
+  background: #5146e5;
+  color: white;
+  padding: 9px 13px;
+  border-radius: 20px;
+  font-weight: bold;
+}
+
+.progresso {
+  height: 9px;
+  background: #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 15px 0 25px;
+}
+
+.barra {
+  height: 100%;
+  width: 0%;
+  background: #5146e5;
+  transition: .3s;
+}
+
+.card-pergunta {
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 5px 20px #00000012;
+}
+
+.numero {
+  color: #5146e5;
+  font-weight: bold;
+}
+
+#pergunta {
+  font-size: 22px;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+.opcao {
+  width: 100%;
+  padding: 16px;
+  margin: 8px 0;
+  background: #f7f7fb;
+  border: 2px solid #eeeeF5;
+  border-radius: 15px;
+  font-size: 17px;
+  text-align: left;
+}
+
+.certa {
+  background: #d9f8e2 !important;
+  border-color: #39a95c !important;
+}
+
+.errada {
+  background: #ffe0e0 !important;
+  border-color: #df4545 !important;
+}
+
+#explicacao {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #eef0ff;
+  display: none;
+}
+
+.proximo {
+  background: #5146e5;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 16px;
+  width: 100%;
+  font-size: 17px;
+  margin-top: 15px;
+  display: none;
+}
+
+.resultado {
+  text-align: center;
+  background: white;
+  padding: 30px 20px;
+  border-radius: 25px;
+  box-shadow: 0 5px 20px #00000012;
+}
+
+.nota {
+  font-size: 55px;
+  font-weight: bold;
+  color: #5146e5;
+}
+
+.novo {
+  background: #5146e5;
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 16px;
+  width: 100%;
+  font-size: 17px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>📚 Estuda Fácil</h1>
+  <p>Aprenda de um jeito simples!</p>
+</header>
+
+<main>
+
+<section id="inicio" class="tela ativa">
+
+<h2>📖 Escolha uma matéria</h2>
+
+<button class="materia" onclick="comecar('Matemática')">
+➗ Matemática
+</button>
+
+<button class="materia" onclick="comecar('Português')">
+📖 Português
+</button>
+
+<button class="materia" onclick="comecar('Ciências')">
+🔬 Ciências
+</button>
+
+<button class="materia" onclick="comecar('História')">
+🏛️ História
+</button>
+
+<button class="materia" onclick="comecar('Geografia')">
+🌎 Geografia
+</button>
+
+</section>
+
+
+<section id="quiz" class="tela">
+
+<div class="topo">
+
+<button class="voltar" onclick="inicio()">
+← Voltar
+</button>
+
+<span class="pontos" id="pontos">
+⭐ 0
+</span>
+
+</div>
+
+<h2 id="materia"></h2>
+
+<div class="progresso">
+<div class="barra" id="barra"></div>
+</div>
+
+<div class="card-pergunta">
+
+<div class="numero" id="numero"></div>
+
+<p id="pergunta"></p>
+
+<div id="opcoes"></div>
+
+<div id="explicacao"></div>
+
+<button class="proximo" id="proximo" onclick="proxima()">
+Próxima pergunta →
+</button>
+
+</div>
+
+</section>
+
+
+<section id="resultado" class="tela">
+
+<div class="resultado">
+
+<h2>🎉 Quiz terminado!</h2>
+
+<p>Você fez:</p>
+
+<div class="nota" id="nota"></div>
+
+<p id="mensagem"></p>
+
+<button class="novo" onclick="inicio()">
+📚 Escolher outra matéria
+</button>
+
+</div>
+
+</section>
+
+</main>
+
+
+<script>
+
+const perguntas = {
+
+Matemática: [
+
+["Quanto é 5 + 7?",["10","11","12","13"],"12","5 + 7 = 12."],
+
+["Quanto é 8 × 3?",["21","24","27","30"],"24","8 × 3 = 24."],
+
+["Quanto é 20 ÷ 4?",["4","5","6","8"],"5","20 dividido por 4 é 5."],
+
+["Quanto é 15 - 6?",["7","8","9","10"],"9","15 - 6 = 9."],
+
+["Qual é a metade de 20?",["5","10","15","20"],"10","A metade de 20 é 10."],
+
+["Quanto é 9 × 5?",["35","40","45","50"],"45","9 × 5 = 45."],
+
+["Quanto é 100 - 25?",["65","70","75","80"],"75","100 - 25 = 75."],
+
+["Qual número é maior?",["12","18","15","10"],"18","18 é o maior número."],
+
+["Quanto é 7 + 8?",["13","14","15","16"],"15","7 + 8 = 15."],
+
+["Quanto é 50 ÷ 10?",["2","5","10","20"],"5","50 dividido por 10 é 5."]
+
+],
+
+Português: [
+
+["Qual palavra está correta?",["Caza","Casa","Kaza","Cassa"],"Casa","A forma correta é Casa."],
+
+["Qual é o plural de animal?",["Animales","Animãos","Animais","Animalis"],"Animais","O plural correto é animais."],
+
+["Qual é o contrário de alto?",["Grande","Baixo","Largo","Forte"],"Baixo","O contrário de alto é baixo."],
+
+["Qual palavra é um verbo?",["Casa","Correr","Azul","Mesa"],"Correr","Correr indica uma ação."],
+
+["Qual é o plural de pão?",["Pãos","Pães","Pãeses","Pões"],"Pães","O plural correto é pães."],
+
+["Qual palavra indica uma pessoa?",["Professor","Mesa","Janela","Livro"],"Professor","Professor é uma pessoa."],
+
+["Qual é o diminutivo de casa?",["Casão","Casinha","Casarão","Caseiro"],"Casinha","Casinha é o diminutivo de casa."],
+
+["Qual é o aumentativo de casa?",["Casinha","Casarão","Casebre","Casal"],"Casarão","Casarão é uma forma aumentativa."],
+
+["Qual palavra é um animal?",["Cachorro","Cadeira","Caneta","Caderno"],"Cachorro","Cachorro é um animal."],
+
+["Qual palavra está no plural?",["Livro","Mesa","Carros","Caneta"],"Carros","Carros está no plural."]
+
+],
+
+Ciências: [
+
+["Qual planeta é conhecido como Planeta Vermelho?",["Terra","Marte","Júpiter","Vênus"],"Marte","Marte é conhecido como Planeta Vermelho."],
+
+["Qual órgão usamos para respirar?",["Coração","Estômago","Pulmão","Fígado"],"Pulmão","Os pulmões participam da respiração."],
+
+["Qual estrela ilumina a Terra?",["Lua","Sol","Marte","Vênus"],"Sol","O Sol é a estrela do nosso sistema."],
+
+["Qual é o estado da água em um cubo de gelo?",["Líquido","Gasoso","Sólido","Plasma"],"Sólido","O gelo é água no estado sólido."],
+
+["Qual órgão bombeia o sangue?",["Pulmão","Coração","Cérebro","Estômago"],"Coração","O coração bombeia o sangue."],
+
+["Qual animal é mamífero?",["Cachorro","Galinha","Peixe","Sapo"],"Cachorro","O cachorro é um mamífero."],
+
+["As plantas precisam de luz para realizar qual processo?",["Fotossíntese","Digestão","Respiração humana","Audição"],"Fotossíntese","As plantas usam luz na fotossíntese."],
+
+["Qual é o satélite natural da Terra?",["Sol","Marte","Lua","Vênus"],"Lua","A Lua é o satélite natural da Terra."],
+
+["Qual sentido usamos para ouvir?",["Visão","Audição","Tato","Paladar"],"Audição","Usamos a audição para ouvir."],
+
+["Qual parte da planta absorve água do solo?",["Flor","Folha","Raiz","Fruto"],"Raiz","As raízes absorvem água e sais minerais."]
+
+],
+
+História: [
+
+["Qual civilização construiu as pirâmides do Egito?",["Romanos","Egípcios","Gregos","Maias"],"Egípcios","As pirâmides são famosas construções do Egito Antigo."],
+
+["Onde aconteceram os Jogos Olímpicos da Antiguidade?",["Grécia","Brasil","Egito","China"],"Grécia","Os Jogos Olímpicos surgiram na Grécia Antiga."],
+
+["Quem proclamou a Independência do Brasil?",["Pedro Álvares Cabral","Dom Pedro I","Tiradentes","Getúlio Vargas"],"Dom Pedro I","Dom Pedro I proclamou a Independência do Brasil em 1822."],
+
+["Em qual ano ocorreu a Independência do Brasil?",["1500","1789","1822","1889"],"1822","A Independência foi proclamada em 1822."],
+
+["Qual povo construiu o Coliseu?",["Romanos","Maias","Egípcios","Incas"],"Romanos","O Coliseu foi construído na Roma Antiga."],
+
+["Quem foi Tiradentes?",["Um líder da Inconfidência Mineira","Um rei","Um navegador","Um imperador romano"],"Um líder da Inconfidência Mineira","Tiradentes participou da Inconfidência Mineira."],
+
+["Qual foi o primeiro nome do Brasil dado pelos portugueses?",["Terra de Santa Cruz","Brasil Novo","Terra Verde","Nova Portugal"],"Terra de Santa Cruz","Esse foi um dos primeiros nomes dados à terra pelos portugueses."],
+
+["Em que ano os portugueses chegaram ao Brasil?",["1492","1500","1600","1700"],"1500","A chegada portuguesa ocorreu em 1500."],
+
+["Qual civilização ficou conhecida por suas grandes pirâmides na América Central?",["Maias","Romanos","Egípcios","Vikings"],"Maias","Os Maias construíram importantes cidades e pirâmides."],
+
+["Qual acontecimento marcou o fim da monarquia no Brasil?",["Independência","Proclamação da República","Descobrimento","Inconfidência"],"Proclamação da República","A República foi proclamada em 1889."]
+
+],
+
+Geografia: [
+
+["Qual é o maior país da América do Sul?",["Argentina","Brasil","Chile","Peru"],"Brasil","O Brasil é o maior país da América do Sul."],
+
+["Qual é a capital do Brasil?",["São Paulo","Rio de Janeiro","Brasília","Salvador"],"Brasília","Brasília é a capital do Brasil."],
+
+["Qual é o maior oceano do planeta?",["Atlântico","Índico","Pacífico","Ártico"],"Pacífico","O Oceano Pacífico é o maior oceano."],
+
+["Em qual continente fica o Brasil?",["Europa","Ásia","América do Sul","África"],"América do Sul","O Brasil está localizado na América do Sul."],
+
+["Qual é o maior continente?",["África","Ásia","Europa","Oceania"],"Ásia","A Ásia é o maior continente."],
+
+["Qual linha imaginária divide a Terra em hemisférios Norte e Sul?",["Equador","Greenwich","Trópico de Câncer","Meridiano 90"],"Equador","A Linha do Equador divide os hemisférios Norte e Sul."],
+
+["Qual é a capital de São Paulo?",["Campinas","Santos","São Paulo","Guarulhos"],"São Paulo","A capital do estado de São Paulo é São Paulo."],
+
+["Qual é o continente conhecido como continente gelado?",["África","Antártida","Europa","Ásia"],"Antártida","A Antártida é o continente localizado no extremo sul."],
+
+["Qual é o maior rio em volume de água do mundo?",["Amazonas","Nilo","Mississippi","Tigre"],"Amazonas","O Rio Amazonas possui enorme volume de água."],
+
+["Qual é o país conhecido pelo formato de uma bota?",["Brasil","Itália","França","Portugal"],"Itália","A Itália é frequentemente comparada ao formato de uma bota."]
+
+]
+
+};
+
+
+let materiaAtual = "";
+let listaAtual = [];
+let numeroAtual = 0;
+let pontos = 0;
+let respondeu = false;
+
+
+function embaralhar(lista) {
+
+return [...lista].sort(() => Math.random() - 0.5);
+
+}
+
+
+function comecar(materia) {
+
+materiaAtual = materia;
+
+listaAtual = embaralhar(perguntas[materia]);
+
+numeroAtual = 0;
+pontos = 0;
+
+document.getElementById("materia").textContent =
+materia;
+
+mostrarTela("quiz");
+
+mostrarPergunta();
+
+}
+
+
+function mostrarPergunta() {
+
+respondeu = false;
+
+const dados = listaAtual[numeroAtual];
+
+document.getElementById("numero").textContent =
+"Questão " + (numeroAtual + 1) + " de " + listaAtual.length;
+
+document.getElementById("pergunta").textContent =
+dados[0];
+
+document.getElementById("pontos").textContent =
+"⭐ " + pontos;
+
+document.getElementById("barra").style.width =
+((numeroAtual / listaAtual.length) * 100) + "%";
+
+document.getElementById("explicacao").style.display =
+"none";
+
+document.getElementById("proximo").style.display =
+"none";
+
+const opcoes = document.getElementById("opcoes");
+
+opcoes.innerHTML = "";
+
+const alternativas = embaralhar(dados[1]);
+
+alternativas.forEach(function(opcao) {
+
+const botao = document.createElement("button");
+
+botao.className = "opcao";
+
+botao.textContent = opcao;
+
+botao.onclick = function() {
+
+responder(botao, opcao);
+
+};
+
+opcoes.appendChild(botao);
+
+});
+
+}
+
+
+function responder(botao, resposta) {
+
+if (respondeu) return;
+
+respondeu = true;
+
+const dados = listaAtual[numeroAtual];
+
+const correta = dados[2];
+
+if (resposta === correta) {
+
+pontos += 10;
+
+botao.classList.add("certa");
+
+} else {
+
+botao.classList.add("errada");
+
+document.querySelectorAll(".opcao").forEach(function(b) {
+
+if (b.textContent === correta) {
+
+b.classList.add("certa");
+
+}
+
+});
+
+}
+
+document.getElementById("pontos").textContent =
+"⭐ " + pontos;
+
+document.getElementById("explicacao").textContent =
+"💡 " + dados[3];
+
+document.getElementById("explicacao").style.display =
+"block";
+
+document.getElementById("proximo").style.display =
+"block";
+
+}
+
+
+function proxima() {
+
+numeroAtual++;
+
+if (numeroAtual >= listaAtual.length) {
+
+mostrarResultado();
+
+} else {
+
+mostrarPergunta();
+
+}
+
+}
+
+
+function mostrarResultado() {
+
+document.getElementById("nota").textContent =
+pontos + " pontos";
+
+if (pontos >= 90) {
+
+document.getElementById("mensagem").textContent =
+"🏆 Excelente! Você mandou muito bem!";
+
+} else if (pontos >= 70) {
+
+document.getElementById("mensagem").textContent =
+"👏 Muito bom! Continue estudando!";
+
+} else if (pontos >= 50) {
+
+document.getElementById("mensagem").textContent =
+"💪 Bom trabalho! Você pode melhorar ainda mais!";
+
+} else {
+
+document.getElementById("mensagem").textContent =
+"📚 Continue praticando. Você consegue!";
+
+}
+
+mostrarTela("resultado");
+
+}
+
+
+function mostrarTela(id) {
+
+document.querySelectorAll(".tela").forEach(function(tela) {
+
+tela.classList.remove("ativa");
+
+});
+
+document.getElementById(id).classList.add("ativa");
+
+}
+
+
+function inicio() {
+
+mostrarTela("inicio");
+
+}
+
+</script>
+
+</body>
+</html>
