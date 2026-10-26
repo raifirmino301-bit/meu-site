@@ -1,4 +1,4 @@
-@ray.ofc_122 Instagram 
+@Ray.ofc_122 Instagram 
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -11,9 +11,9 @@
 
     body {
       margin: 0;
-      padding: 24px 18px 100px;
+      padding: 24px 18px 110px;
       background: #101116;
-      color: #fff;
+      color: #f8f8fa;
       font-family: Arial, sans-serif;
     }
 
@@ -21,76 +21,103 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-bottom: 28px;
+      margin-bottom: 30px;
     }
 
     .logo {
-      width: 64px;
-      height: 64px;
-      flex: 0 0 64px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #7852f6, #d34bb8);
-      display: grid;
-      place-items: center;
-      font-size: 32px;
+      width: 68px;
+      height: 68px;
+      flex: 0 0 68px;
+      border-radius: 18px;
+      box-shadow: 0 5px 18px #7852f655;
     }
 
-    h1 { margin: 0; font-size: clamp(22px, 6vw, 34px); }
-    .subtitulo { color: #aaa; margin-top: 6px; }
+    h1 {
+      margin: 0;
+      font-size: clamp(24px, 6vw, 38px);
+    }
 
-    button, .botao {
+    .subtitulo {
+      color: #aaaab0;
+      font-size: 16px;
+      margin-top: 6px;
+    }
+
+    .abas {
+      display: flex;
+      gap: 12px;
+      margin: 30px 0 26px;
+    }
+
+    button, .botao-adicionar {
       border: 0;
       color: white;
       font: inherit;
       cursor: pointer;
     }
 
-    .abas { display: flex; gap: 10px; margin: 25px 0; }
-
     .aba {
-      padding: 12px 20px;
-      border-radius: 25px;
-      background: #292933;
+      padding: 13px 22px;
+      border-radius: 30px;
+      background: #24242e;
+      font-size: 17px;
     }
 
-    .aba.ativa, .botao { background: #7852f6; }
+    .aba.ativa, .botao-adicionar { background: #7852f6; }
 
-    .botao {
+    .botao-adicionar {
       display: inline-block;
-      padding: 13px 18px;
-      border-radius: 25px;
-      margin-bottom: 15px;
+      padding: 14px 20px;
+      border-radius: 30px;
+      font-size: 17px;
+      margin-bottom: 16px;
     }
 
     #seletor { display: none; }
     .tela { display: none; }
     .tela.ativa { display: block; }
 
-    .vazio { color: #aaa; text-align: center; margin: 30px 5px; line-height: 1.5; }
+    .vazio {
+      color: #aaaab0;
+      text-align: center;
+      line-height: 1.5;
+      margin: 35px 8px;
+    }
 
     .musica {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 13px;
       padding: 12px 4px;
-      border-bottom: 1px solid #30303a;
+      border-bottom: 1px solid #292a32;
       cursor: pointer;
     }
 
     .capa {
-      width: 50px;
-      height: 50px;
-      flex: 0 0 50px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #7852f6, #d34bb8);
+      width: 55px;
+      height: 55px;
+      flex: 0 0 55px;
       display: grid;
       place-items: center;
-      font-size: 24px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7852f6, #d34bb8);
+      font-size: 25px;
     }
 
-    .detalhes { flex: 1; min-width: 0; }
-    .nome { font-weight: bold; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-    .info { color: #aaa; font-size: 13px; margin-top: 5px; }
+    .detalhes { min-width: 0; flex: 1; }
+
+    .nome {
+      font-weight: bold;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .info {
+      color: #aaaab0;
+      font-size: 14px;
+      margin-top: 5px;
+    }
 
     .player {
       position: fixed;
@@ -99,23 +126,112 @@
       right: 0;
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px;
-      background: #24242e;
+      gap: 12px;
+      padding: 12px 14px;
+      background: #22222c;
       border-top: 1px solid #393943;
     }
 
-    .player .capa { width: 44px; height: 44px; flex-basis: 44px; }
-    .tocando { flex: 1; min-width: 0; }
-    .controles { display: flex; gap: 5px; }
-    .controle { background: transparent; font-size: 21px; padding: 5px; }
+    .player .capa {
+      width: 48px;
+      height: 48px;
+      flex-basis: 48px;
+    }
+
+    .tocando { min-width: 0; flex: 1; }
+    .controles { display: flex; align-items: center; gap: 5px; }
+    .controle { background: transparent; font-size: 22px; padding: 6px 3px; }
     audio { display: none; }
+
+    #avisoInicial {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(10, 10, 15, 0.92);
+    }
+
+    .caixa-aviso {
+      width: 100%;
+      max-width: 420px;
+      padding: 26px 22px;
+      border: 1px solid #393943;
+      border-radius: 22px;
+      background: #22222c;
+      text-align: center;
+      box-shadow: 0 12px 40px #0008;
+    }
+
+    .caixa-aviso h2 { margin: 12px 0; }
+    .caixa-aviso p { color: #ddd; line-height: 1.5; }
+
+    .botao-entendi {
+      margin-top: 10px;
+      padding: 13px 20px;
+      border-radius: 25px;
+      background: #7852f6;
+      font-weight: bold;
+    }
   </style>
 </head>
 
 <body>
+  <div id="avisoInicial">
+    <div class="caixa-aviso">
+      <div class="logo" style="margin: 0 auto 12px;">
+        <svg viewBox="0 0 100 100" width="68" height="68"
+             xmlns="http://www.w3.org/2000/svg" aria-label="Logo">
+          <defs>
+            <linearGradient id="fundoAviso" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#7852f6"/>
+              <stop offset="100%" stop-color="#d34bb8"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="22" fill="url(#fundoAviso)"/>
+          <path d="M25 53v-5a25 25 0 0 1 50 0v5"
+                fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+          <rect x="19" y="49" width="15" height="27" rx="7" fill="white"/>
+          <rect x="66" y="49" width="15" height="27" rx="7" fill="white"/>
+          <path d="M54 34v24l-17 5V43l17-5v-4z" fill="#ffe45e"/>
+          <circle cx="41" cy="68" r="7" fill="#ffe45e"/>
+          <circle cx="58" cy="63" r="7" fill="#ffe45e"/>
+        </svg>
+      </div>
+      <h2>Bem-vindo ao Minhas Músicas Playlist!</h2>
+      <p>
+        Escolha arquivos de áudio que você tenha autorização para usar.
+        Salve-os no celular e toque em <strong>Adicionar músicas</strong>
+        para selecioná-los.
+      </p>
+      <p>Se divirta! 🎶</p>
+      <button class="botao-entendi" onclick="fecharAviso()">
+        Entendi, vamos lá!
+      </button>
+    </div>
+  </div>
+
   <header>
-    <div class="logo" aria-label="Logo de música">🎧</div>
+    <svg class="logo" viewBox="0 0 100 100"
+         xmlns="http://www.w3.org/2000/svg" aria-label="Logo">
+      <defs>
+        <linearGradient id="fundoCabecalho" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#7852f6"/>
+          <stop offset="100%" stop-color="#d34bb8"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" rx="22" fill="url(#fundoCabecalho)"/>
+      <path d="M25 53v-5a25 25 0 0 1 50 0v5"
+            fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
+      <rect x="19" y="49" width="15" height="27" rx="7" fill="white"/>
+      <rect x="66" y="49" width="15" height="27" rx="7" fill="white"/>
+      <path d="M54 34v24l-17 5V43l17-5v-4z" fill="#ffe45e"/>
+      <circle cx="41" cy="68" r="7" fill="#ffe45e"/>
+      <circle cx="58" cy="63" r="7" fill="#ffe45e"/>
+    </svg>
+
     <div>
       <h1>Minhas Músicas Playlist</h1>
       <div class="subtitulo">Suas músicas, do seu jeito</div>
@@ -128,15 +244,15 @@
   </nav>
 
   <section id="musicas" class="tela ativa">
-    <label class="botao" for="seletor">＋ Adicionar músicas</label>
+    <label class="botao-adicionar" for="seletor">＋ Adicionar músicas</label>
     <input id="seletor" type="file" accept="audio/*" multiple>
     <div id="listaMusicas" class="vazio">
-      Ainda não há músicas. Toque em “Adicionar músicas” para escolher arquivos.
+      Ainda não há músicas. Toque em “Adicionar músicas” para escolher arquivos do celular.
     </div>
   </section>
 
   <section id="playlists" class="tela">
-    <button class="botao" onclick="criarPlaylist()">＋ Criar playlist</button>
+    <button class="botao-adicionar" onclick="criarPlaylist()">＋ Criar playlist</button>
     <div id="listaPlaylists" class="vazio">Suas playlists aparecerão aqui.</div>
   </section>
 
@@ -147,9 +263,9 @@
       <div class="info">Minhas Músicas Playlist</div>
     </div>
     <div class="controles">
-      <button class="controle" onclick="anterior()" aria-label="Música anterior">⏮</button>
+      <button class="controle" onclick="anterior()" aria-label="Anterior">⏮</button>
       <button class="controle" id="botaoPlay" onclick="playPause()" aria-label="Tocar ou pausar">▶</button>
-      <button class="controle" onclick="proxima()" aria-label="Próxima música">⏭</button>
+      <button class="controle" onclick="proxima()" aria-label="Próxima">⏭</button>
     </div>
   </div>
 
@@ -165,6 +281,10 @@
     let musicas = [];
     let indiceAtual = -1;
     let playlists = [];
+
+    function fecharAviso() {
+      document.getElementById("avisoInicial").style.display = "none";
+    }
 
     seletor.addEventListener("change", function () {
       Array.from(this.files).forEach(function (arquivo) {
@@ -182,15 +302,21 @@
 
       if (musicas.length === 0) {
         listaMusicas.className = "vazio";
-        listaMusicas.textContent = "Ainda não há músicas. Toque em “Adicionar músicas” para escolher arquivos.";
+        listaMusicas.textContent =
+          "Ainda não há músicas. Toque em “Adicionar músicas” para escolher arquivos do celular.";
         return;
       }
 
       listaMusicas.className = "";
+
       musicas.forEach(function (musica, indice) {
         const item = document.createElement("div");
         item.className = "musica";
-        item.innerHTML = '<div class="capa">♫</div><div class="detalhes"><div class="nome"></div><div class="info">Arquivo de áudio</div></div>';
+        item.innerHTML =
+          '<div class="capa">♫</div>' +
+          '<div class="detalhes"><div class="nome"></div>' +
+          '<div class="info">Arquivo do celular</div></div>';
+
         item.querySelector(".nome").textContent = musica.nome;
         item.onclick = function () { tocar(indice); };
         listaMusicas.appendChild(item);
@@ -198,16 +324,18 @@
     }
 
     function tocar(indice) {
-      if (!musicas.length) return;
+      if (musicas.length === 0) return;
       indiceAtual = indice;
       audio.src = musicas[indice].url;
       nomeAtual.textContent = musicas[indice].nome;
-      audio.play();
+      audio.play().catch(function () {
+        alert("Não foi possível tocar esse arquivo. Tente escolher outro áudio.");
+      });
     }
 
     function playPause() {
       if (indiceAtual === -1) {
-        if (musicas.length) tocar(0);
+        if (musicas.length > 0) tocar(0);
       } else if (audio.paused) {
         audio.play();
       } else {
@@ -216,11 +344,13 @@
     }
 
     function proxima() {
-      if (musicas.length) tocar((indiceAtual + 1) % musicas.length);
+      if (musicas.length > 0) tocar((indiceAtual + 1) % musicas.length);
     }
 
     function anterior() {
-      if (musicas.length) tocar((indiceAtual - 1 + musicas.length) % musicas.length);
+      if (musicas.length > 0) {
+        tocar((indiceAtual - 1 + musicas.length) % musicas.length);
+      }
     }
 
     audio.addEventListener("ended", proxima);
@@ -228,9 +358,14 @@
     audio.addEventListener("pause", function () { botaoPlay.textContent = "▶"; });
 
     function abrirTela(id, botao) {
-      document.querySelectorAll(".tela").forEach(tela => tela.classList.remove("ativa"));
+      document.querySelectorAll(".tela").forEach(function (tela) {
+        tela.classList.remove("ativa");
+      });
       document.getElementById(id).classList.add("ativa");
-      document.querySelectorAll(".aba").forEach(aba => aba.classList.remove("ativa"));
+
+      document.querySelectorAll(".aba").forEach(function (aba) {
+        aba.classList.remove("ativa");
+      });
       botao.classList.add("ativa");
     }
 
@@ -246,11 +381,16 @@
       playlists.forEach(function (titulo) {
         const item = document.createElement("div");
         item.className = "musica";
-        item.innerHTML = '<div class="capa">📁</div><div class="detalhes"><div class="nome"></div><div class="info">Playlist</div></div>';
+        item.innerHTML =
+          '<div class="capa">📁</div>' +
+          '<div class="detalhes"><div class="nome"></div>' +
+          '<div class="info">Playlist</div></div>';
+
         item.querySelector(".nome").textContent = titulo;
         area.appendChild(item);
       });
     }
   </script>
+  <P>@ray.ofc-122</p>
 </body>
 </html>
