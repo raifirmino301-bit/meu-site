@@ -1,9 +1,12 @@
-@Ray.ofc_122 Instagram 
+html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101116">
+  <link rel="manifest" href="./manifest.json">
+
   <title>Minhas Músicas Playlist</title>
 
   <style>
@@ -40,6 +43,12 @@
     .subtitulo {
       color: #aaaab0;
       font-size: 16px;
+      margin-top: 6px;
+    }
+
+    .instagram {
+      color: #d5c9ff;
+      font-size: 14px;
       margin-top: 6px;
     }
 
@@ -200,6 +209,7 @@
           <circle cx="58" cy="63" r="7" fill="#ffe45e"/>
         </svg>
       </div>
+
       <h2>Bem-vindo ao Minhas Músicas Playlist!</h2>
       <p>
         Escolha arquivos de áudio que você tenha autorização para usar.
@@ -235,6 +245,7 @@
     <div>
       <h1>Minhas Músicas Playlist</h1>
       <div class="subtitulo">Suas músicas, do seu jeito</div>
+      <div class="instagram">@Ray.ofc_122 Instagram</div>
     </div>
   </header>
 
@@ -328,6 +339,7 @@
       indiceAtual = indice;
       audio.src = musicas[indice].url;
       nomeAtual.textContent = musicas[indice].nome;
+
       audio.play().catch(function () {
         alert("Não foi possível tocar esse arquivo. Tente escolher outro áudio.");
       });
@@ -390,7 +402,15 @@
         area.appendChild(item);
       });
     }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./sw.js").catch(function (erro) {
+          console.log("Não foi possível registrar o app:", erro);
+        });
+      });
+    }
   </script>
-  <P>@ray.ofc-122</p>
+ </p>@ray.ofc-122</p>
 </body>
 </html>
