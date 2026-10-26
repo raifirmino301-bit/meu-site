@@ -1,1 +1,10 @@
 
+{
+  "name": "Minhas Músicas Playlist",
+  "short_name": "Minhas Músicas",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#101116",
+  "theme_color": "#101116"
+}
