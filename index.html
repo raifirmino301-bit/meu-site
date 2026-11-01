@@ -28,8 +28,8 @@
     }
 
     #mensagem {
-      color: #ffb8c8;
       min-height: 24px;
+      color: #ffb8c8;
     }
 
     #controles {
@@ -41,14 +41,17 @@
       touch-action: none;
     }
 
-    #controles button {
+    #controles button, #reiniciar {
       border: 2px solid #b995cb;
       border-radius: 12px;
       background: #392944;
       color: white;
+      user-select: none;
+    }
+
+    #controles button {
       font-size: 26px;
       touch-action: none;
-      user-select: none;
     }
 
     #cima { grid-area: 1 / 2; }
@@ -58,17 +61,13 @@
 
     #reiniciar {
       padding: 10px 18px;
-      border: 2px solid #b995cb;
-      border-radius: 10px;
-      background: #392944;
-      color: white;
       font-size: 16px;
     }
   </style>
 </head>
 <body>
   <h1>A Casa de Renato</h1>
-  <div id="info">Parte 1 de 5 — Itens: 0 de 3</div>
+  <div id="info"></div>
   <div id="mensagem">Pegue os três itens e encontre a saída verde!</div>
 
   <canvas id="jogo" width="800" height="600"></canvas>
@@ -80,82 +79,56 @@
     <button id="direita" aria-label="Direita">➡️</button>
   </div>
 
-  <p>
-    <button id="reiniciar" onclick="reiniciarJogo()">
-      Recomeçar do início
-    </button>
-  </p>
+  <p><button id="reiniciar" type="button">Recomeçar do início</button></p>
 
   <script>
     "use strict";
 
     const canvas = document.getElementById("jogo");
     const ctx = canvas.getContext("2d");
-    const mensagem = document.getElementById("mensagem");
     const info = document.getElementById("info");
-
-    const fotoYarlei = new Image();
-    fotoYarlei.src = "yarlei.jpg";
+    const mensagem = document.getElementById("mensagem");
 
     const tamanho = 25;
     const colunas = 32;
     const linhas = 24;
-    const teclas = {};
+    const teclas = Object.create(null);
 
-    const mapa = Array.from({ length: linhas }, (_, y) =>
-      Array.from({ length: colunas }, (_, x) =>
-        x === 0 || y === 0 || x === colunas - 1 || y === linhas - 1
-          ? "#"
-          : " "
-      )
-    );
-
-    for (let x = 5; x < 27; x++) {
-      if (x !== 10 && x !== 21) mapa[7][x] = "#";
-    }
-
-    for (let x = 3; x < 25; x++) {
-      if (x !== 8 && x !== 17) mapa[15][x] = "#";
-    }
-
-    for (let y = 3; y < 20; y++) {
-      if (y !== 10 && y !== 18) mapa[y][12] = "#";
-    }
-
-    for (let y = 4; y < 22; y++) {
-      if (y !== 12 && y !== 19) mapa[y][22] = "#";
-    }
-
-    const obstaculos = [
-      [3, 5], [4, 5], [8, 3], [9, 3], [15, 4], [16, 4],
-      [25, 5], [27, 9], [5, 11], [6, 11], [9, 12], [10, 12],
-      [14, 9], [15, 9], [19, 10], [20, 10], [3, 18], [7, 19],
-      [8, 19], [14, 19], [18, 20], [19, 20], [25, 16], [27, 18],
-      [6, 3], [18, 3], [28, 6], [2, 9], [8, 10], [17, 12],
-      [26, 13], [10, 20], [16, 17], [29, 15]
+    const nomesFases = [
+      "Fase 1 — A Casa de Renato",
+      "Fase 2 — Hospital abandonado",
+      "Fase 3 — Presídio",
+      "Fase 4 — Museu",
+      "Fase 5 — Terror: Hard AI Sim"
     ];
 
-    for (const [x, y] of obstaculos) {
-      mapa[y][x] = "#";
-    }
-
-    const escadas = [
-      { x: 7, y: 9, largura: 4, altura: 3 },
-      { x: 24, y: 9, largura: 4, altura: 3 },
-      { x: 14, y: 17, largura: 4, altura: 3 }
+    const temas = [
+      { chao: "#29252b", parede: "#514454", detalhe: "#75657a" },
+      { chao: "#26343a", parede: "#46616b", detalhe: "#9bcbd3" },
+      { chao: "#292a32", parede: "#555565", detalhe: "#9999aa" },
+      { chao: "#383124", parede: "#77613c", detalhe: "#d6bd7b" },
+      { chao: "#21151d", parede: "#552b3b", detalhe: "#b75b75" }
     ];
+
+    let parte = 1;
+    let mapa = [];
+    let acabou = false;
+    let ultimoTempo = performance.now();
+    let contadorSaida = false;
 
     const jogador = {
-      x: 2.5 * tamanho,
-      y: 2.5 * tamanho,
+      x: 62.5,
+      y: 62.5,
       velocidade: 180
     };
 
     const renato = {
-      x: 29.5 * tamanho,
-      y: 21.5 * tamanho,
-      velocidade: 155
+      x: 737.5,
+      y: 537.5,
+      velocidade: 150
     };
+
+    const saida = { x: 29, y: 2 };
 
     const itens = [
       { nome: "Diamante", emoji: "💎", x: 4, y: 20, pego: false },
@@ -163,44 +136,141 @@
       { nome: "Pintura", emoji: "🖼️", x: 18, y: 11, pego: false }
     ];
 
-    const saida = { x: 29, y: 2 };
+    const fotoYarlei = new Image();
+    fotoYarlei.src = "yarlei.jpg";
+    function criarMapa(fase) {
+      const novo = Array.from({ length: linhas }, (_, y) =>
+        Array.from({ length: colunas }, (_, x) =>
+          x === 0 || y === 0 || x === colunas - 1 || y === linhas - 1
+            ? "#"
+            : " "
+        )
+      );
 
-    let parte = 1;
-    let acabou = false;
-    let tempoEstado = 0;
-    let pausaRenato = false;
-    let sustoYarlei = false;
-    let ultimoTempo = performance.now();
-    function atualizarInfo() {
-      const encontrados = itens.filter((item) => item.pego).length;
-      const nomeParte = parte === 5 ? "Hard AI Sim" : `Parte ${parte} de 5`;
-      info.textContent =
-        `${nomeParte} — Itens: ${encontrados} de ${itens.length}`;
+      function horizontal(y, inicio, fim, abertura) {
+        for (let x = inicio; x <= fim; x++) {
+          if (x !== abertura) novo[y][x] = "#";
+        }
+      }
+
+      function vertical(x, inicio, fim, abertura) {
+        for (let y = inicio; y <= fim; y++) {
+          if (y !== abertura) novo[y][x] = "#";
+        }
+      }
+
+      if (fase === 1) {
+        horizontal(7, 5, 26, 10);
+        horizontal(15, 3, 24, 8);
+        vertical(12, 3, 19, 10);
+        vertical(22, 4, 21, 12);
+
+        const obstaculos = [
+          [3, 5], [4, 5], [8, 3], [9, 3], [15, 4], [16, 4],
+          [25, 5], [27, 9], [5, 11], [6, 11], [9, 12], [10, 12],
+          [14, 9], [15, 9], [19, 10], [20, 10], [3, 18], [7, 19],
+          [8, 19], [14, 19], [18, 20], [19, 20], [25, 16], [27, 18],
+          [6, 3], [18, 3], [28, 6], [2, 9], [8, 10], [17, 12],
+          [26, 13], [10, 20], [16, 17], [29, 15]
+        ];
+
+        for (const [x, y] of obstaculos) {
+          novo[y][x] = "#";
+        }
+      } else if (fase === 2) {
+        // Hospital: corredores compridos e salas laterais.
+        horizontal(6, 2, 29, 15);
+        horizontal(12, 2, 29, 7);
+        horizontal(18, 2, 29, 24);
+        vertical(9, 3, 21, 8);
+        vertical(20, 2, 21, 15);
+        vertical(26, 3, 21, 10);
+      } else if (fase === 3) {
+        // Presídio: corredores de celas.
+        horizontal(5, 2, 29, 25);
+        horizontal(11, 2, 29, 7);
+        horizontal(17, 2, 29, 23);
+        vertical(8, 3, 21, 15);
+        vertical(16, 3, 21, 8);
+        vertical(24, 3, 21, 19);
+      } else if (fase === 4) {
+        // Museu: salas e galerias.
+        horizontal(7, 2, 29, 5);
+        horizontal(14, 2, 29, 26);
+        horizontal(20, 2, 29, 12);
+        vertical(11, 3, 21, 18);
+        vertical(21, 3, 21, 9);
+        vertical(27, 3, 19, 15);
+      } else {
+        // Fase de terror: labirinto mais fechado.
+        horizontal(4, 2, 29, 10);
+        horizontal(8, 2, 29, 25);
+        horizontal(12, 2, 29, 6);
+        horizontal(16, 2, 29, 23);
+        horizontal(20, 2, 29, 12);
+        vertical(7, 2, 21, 18);
+        vertical(14, 2, 21, 5);
+        vertical(21, 2, 21, 15);
+        vertical(27, 2, 21, 10);
+      }
+
+      // Mantém livres o início, a saída e os locais dos itens.
+      const celulasLivres = [
+        [2, 2],
+        [29, 21],
+        [saida.x, saida.y],
+        ...itens.map((item) => [item.x, item.y])
+      ];
+
+      for (const [x, y] of celulasLivres) {
+        novo[y][x] = " ";
+      }
+
+      return novo;
     }
 
-    function paredeNaPosicao(x, y) {
+    function atualizarInfo() {
+      const coletados = itens.filter((item) => item.pego).length;
+      info.textContent =
+        `${nomesFases[parte - 1]} — Itens: ${coletados}/${itens.length}`;
+    }
+
+    function parede(x, y) {
       const coluna = Math.floor(x / tamanho);
       const linha = Math.floor(y / tamanho);
       return !mapa[linha] || mapa[linha][coluna] === "#";
     }
 
     function podeMover(x, y, raio = 9) {
-      return !paredeNaPosicao(x - raio, y - raio) &&
-             !paredeNaPosicao(x + raio, y - raio) &&
-             !paredeNaPosicao(x - raio, y + raio) &&
-             !paredeNaPosicao(x + raio, y + raio);
+      return !parede(x - raio, y - raio) &&
+             !parede(x + raio, y - raio) &&
+             !parede(x - raio, y + raio) &&
+             !parede(x + raio, y + raio);
     }
 
-    function moverJogador(dx, dy) {
-      if (podeMover(jogador.x + dx, jogador.y)) {
-        jogador.x += dx;
+    function configurarBotao(id, tecla) {
+      const botao = document.getElementById(id);
+
+      botao.addEventListener("pointerdown", (evento) => {
+        evento.preventDefault();
+        teclas[tecla] = true;
+        botao.setPointerCapture(evento.pointerId);
+      });
+
+      function soltar() {
+        teclas[tecla] = false;
       }
-      if (podeMover(jogador.x, jogador.y + dy)) {
-        jogador.y += dy;
-      }
+
+      botao.addEventListener("pointerup", soltar);
+      botao.addEventListener("pointercancel", soltar);
+      botao.addEventListener("lostpointercapture", soltar);
     }
 
-    // Controles do teclado.
+    configurarBotao("cima", "arrowup");
+    configurarBotao("baixo", "arrowdown");
+    configurarBotao("esquerda", "arrowleft");
+    configurarBotao("direita", "arrowright");
+
     window.addEventListener("keydown", (evento) => {
       const tecla = evento.key.toLowerCase();
       teclas[tecla] = true;
@@ -214,29 +284,15 @@
       teclas[evento.key.toLowerCase()] = false;
     });
 
-    // Botões para celular e tablet.
-    function configurarBotao(id, tecla) {
-      const botao = document.getElementById(id);
+    function moverJogador(dx, dy) {
+      if (podeMover(jogador.x + dx, jogador.y)) {
+        jogador.x += dx;
+      }
 
-      botao.addEventListener("pointerdown", (evento) => {
-        evento.preventDefault();
-        teclas[tecla] = true;
-        botao.setPointerCapture(evento.pointerId);
-      });
-
-      const soltar = () => {
-        teclas[tecla] = false;
-      };
-
-      botao.addEventListener("pointerup", soltar);
-      botao.addEventListener("pointercancel", soltar);
-      botao.addEventListener("lostpointercapture", soltar);
+      if (podeMover(jogador.x, jogador.y + dy)) {
+        jogador.y += dy;
+      }
     }
-
-    configurarBotao("cima", "arrowup");
-    configurarBotao("baixo", "arrowdown");
-    configurarBotao("esquerda", "arrowleft");
-    configurarBotao("direita", "arrowright");
 
     function tocarSomAssustador() {
       const AudioContextClass =
@@ -254,7 +310,7 @@
       oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
 
       volume.gain.setValueAtTime(0.001, agora);
-      volume.gain.exponentialRampToValueAtTime(0.35, agora + 0.08);
+      volume.gain.exponentialRampToValueAtTime(0.3, agora + 0.08);
       volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.4);
 
       oscilador.connect(volume);
@@ -262,12 +318,9 @@
       oscilador.start(agora);
       oscilador.stop(agora + 1.4);
 
-      oscilador.addEventListener("ended", () => {
-        audio.close();
-      });
+      oscilador.addEventListener("ended", () => audio.close());
     }
 
-    // Procura um caminho pelos corredores até o jogador.
     function acharProximoPasso() {
       const inicio = {
         x: Math.floor(renato.x / tamanho),
@@ -289,15 +342,10 @@
       for (let i = 0; i < fila.length; i++) {
         const atual = fila[i];
 
-        if (atual.x === destino.x && atual.y === destino.y) {
-          break;
-        }
+        if (atual.x === destino.x && atual.y === destino.y) break;
 
         for (const [dx, dy] of direcoes) {
-          const proximo = {
-            x: atual.x + dx,
-            y: atual.y + dy
-          };
+          const proximo = { x: atual.x + dx, y: atual.y + dy };
 
           if (
             mapa[proximo.y]?.[proximo.x] !== " " ||
@@ -311,9 +359,7 @@
         }
       }
 
-      if (!anteriores.has(chave(destino))) {
-        return null;
-      }
+      if (!anteriores.has(chave(destino))) return null;
 
       let passo = destino;
 
@@ -326,55 +372,53 @@
 
       return passo;
     }
+
     function desenhar() {
+      const tema = temas[parte - 1];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Desenha chão e paredes.
+      // Desenha o mapa da fase atual.
       for (let y = 0; y < linhas; y++) {
         for (let x = 0; x < colunas; x++) {
+          ctx.fillStyle = mapa[y][x] === "#" ? tema.parede : tema.chao;
+          ctx.fillRect(x * tamanho, y * tamanho, tamanho, tamanho);
+
           if (mapa[y][x] === "#") {
-            ctx.fillStyle = "#514454";
-            ctx.fillRect(x * tamanho, y * tamanho, tamanho, tamanho);
-            ctx.strokeStyle = "#75657a";
+            ctx.strokeStyle = tema.detalhe;
             ctx.strokeRect(x * tamanho, y * tamanho, tamanho, tamanho);
-          } else {
-            ctx.fillStyle = "#29252b";
-            ctx.fillRect(x * tamanho, y * tamanho, tamanho, tamanho);
           }
         }
       }
 
-      // Desenha as escadas decorativas.
-      for (const escada of escadas) {
-        const x = escada.x * tamanho;
-        const y = escada.y * tamanho;
-        const largura = escada.largura * tamanho;
-        const altura = escada.altura * tamanho;
+      // Enfeites diferentes para cada cenário.
+      ctx.textAlign = "center";
+      ctx.font = "18px Arial";
 
-        ctx.fillStyle = "#79512f";
-        ctx.fillRect(x, y, largura, altura);
-        ctx.strokeStyle = "#d2a66c";
-        ctx.lineWidth = 4;
-
-        ctx.beginPath();
-        ctx.moveTo(x + 5, y + 3);
-        ctx.lineTo(x + 5, y + altura - 3);
-        ctx.moveTo(x + largura - 5, y + 3);
-        ctx.lineTo(x + largura - 5, y + altura - 3);
-        ctx.stroke();
-
-        for (let i = 1; i <= 5; i++) {
-          const degrauY = y + (altura * i) / 6;
-          ctx.beginPath();
-          ctx.moveTo(x + 5, degrauY);
-          ctx.lineTo(x + largura - 5, degrauY);
-          ctx.stroke();
-        }
+      if (parte === 2) {
+        ctx.fillStyle = "#b8f1ff";
+        ctx.fillText("✚", 175, 160);
+        ctx.fillText("✚", 575, 360);
+        ctx.fillText("✚", 375, 510);
+      } else if (parte === 3) {
+        ctx.fillStyle = "#d7d7e0";
+        ctx.fillText("▥", 175, 160);
+        ctx.fillText("▥", 575, 360);
+        ctx.fillText("▥", 375, 510);
+      } else if (parte === 4) {
+        ctx.fillStyle = "#ffe08a";
+        ctx.fillText("🖼️", 175, 160);
+        ctx.fillText("🖼️", 575, 360);
+        ctx.fillText("🖼️", 375, 510);
+      } else if (parte === 5) {
+        ctx.fillStyle = "#ff617c";
+        ctx.fillText("☠", 175, 160);
+        ctx.fillText("☠", 575, 360);
+        ctx.fillText("☠", 375, 510);
       }
 
-      ctx.lineWidth = 1;
+      ctx.textAlign = "left";
 
-      // Desenha a saída.
+      // Saída.
       ctx.fillStyle = "#38b764";
       ctx.fillRect(
         saida.x * tamanho,
@@ -383,10 +427,10 @@
         tamanho
       );
       ctx.fillStyle = "white";
-      ctx.font = "12px Arial";
+      ctx.font = "11px Arial";
       ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
 
-      // Desenha os itens não coletados.
+      // Itens não coletados.
       for (const item of itens) {
         if (!item.pego) {
           ctx.font = "20px Arial";
@@ -398,111 +442,103 @@
         }
       }
 
-      // Desenha o jogador.
+      // Jogador.
       ctx.fillStyle = "#79d8ff";
       ctx.beginPath();
       ctx.arc(jogador.x, jogador.y, 10, 0, Math.PI * 2);
       ctx.fill();
 
-      // Desenha Renato se ele não estiver descansando.
-      if (!pausaRenato) {
-        ctx.fillStyle = "#bd334b";
-        ctx.beginPath();
-        ctx.arc(renato.x, renato.y, 12, 0, Math.PI * 2);
-        ctx.fill();
+      // Renato.
+      ctx.fillStyle = parte === 5 ? "#ff1744" : "#bd334b";
+      ctx.beginPath();
+      ctx.arc(
+        renato.x,
+        renato.y,
+        parte === 5 ? 14 : 12,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
 
-        ctx.fillStyle = "white";
-        ctx.font = "12px Arial";
-        ctx.fillText("Renato", renato.x - 19, renato.y - 16);
+      ctx.fillStyle = "white";
+      ctx.font = "12px Arial";
+      ctx.fillText("Renato", renato.x - 19, renato.y - 17);
+
+      // Yarlei aparece discretamente no cenário de terror, se a imagem existir.
+      if (parte === 5 && fotoYarlei.complete && fotoYarlei.naturalWidth > 0) {
+        ctx.globalAlpha = 0.22;
+        ctx.drawImage(fotoYarlei, 360, 250, 80, 95);
+        ctx.globalAlpha = 1;
       }
 
-      // Mostra a foto durante a aparição de Yarlei.
-      if (sustoYarlei) {
-        ctx.fillStyle = "rgba(20, 0, 10, 0.82)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.textAlign = "center";
-        ctx.fillStyle = "white";
-        ctx.font = "bold 44px Arial";
-        ctx.fillText("YARLEI!", canvas.width / 2, 70);
-
-        if (fotoYarlei.complete && fotoYarlei.naturalWidth > 0) {
-          const largura = 260;
-          const altura = 300;
-
-          ctx.drawImage(
-            fotoYarlei,
-            (canvas.width - largura) / 2,
-            100,
-            largura,
-            altura
-          );
-        } else {
-          ctx.font = "18px Arial";
-          ctx.fillText(
-            "Não foi possível carregar yarlei.jpg",
-            canvas.width / 2,
-            220
-          );
-        }
-
-        ctx.font = "20px Arial";
-        ctx.fillText(
-          "Renato está descansando...",
-          canvas.width / 2,
-          435
-        );
-        ctx.textAlign = "left";
-      }
-
-      // Sobreposição de vitória ou derrota.
+      // Tela de vitória ou derrota.
       if (acabou) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.textAlign = "center";
         ctx.fillStyle = "white";
-        ctx.font = "bold 26px Arial";
-        ctx.fillText(mensagem.textContent, canvas.width / 2, canvas.height / 2);
+        ctx.font = "bold 25px Arial";
+        ctx.fillText(
+          mensagem.textContent,
+          canvas.width / 2,
+          canvas.height / 2
+        );
         ctx.textAlign = "left";
       }
 
       atualizarInfo();
     }
+    let tempoEstado = 0;
+    let pausaRenato = false;
 
-    function iniciarProximaParte() {
-      if (parte === 5) {
-        acabou = true;
-        mensagem.textContent =
-          "Você zerou o jogo! Venceu o Hard AI Sim! 🏆";
-        return;
-      }
-
-      parte++;
-
+    function reiniciarPosicoes() {
       jogador.x = 2.5 * tamanho;
       jogador.y = 2.5 * tamanho;
       renato.x = 29.5 * tamanho;
       renato.y = 21.5 * tamanho;
+    }
 
-      for (const item of itens) {
-        item.pego = false;
+    function iniciarProximaFase() {
+      if (parte >= 5) {
+        acabou = true;
+        mensagem.textContent = "Você venceu e zerou o jogo! 🏆";
+        return;
       }
 
-      // Renato fica mais rápido a cada parte.
-      renato.velocidade = 155 + (parte - 1) * 25;
+      parte++;
+      mapa = criarMapa(parte);
+      reiniciarPosicoes();
 
+      itens.forEach((item) => {
+        item.pego = false;
+      });
+
+      if (parte === 3) {
+        itens[0].nome = "Chave principal";
+        itens[0].emoji = "🗝️";
+        itens[1].nome = "Chave da cela";
+        itens[1].emoji = "🔑";
+        itens[2].nome = "Chave da saída";
+        itens[2].emoji = "🔑";
+      } else {
+        itens[0].nome = "Diamante";
+        itens[0].emoji = "💎";
+        itens[1].nome = "Moeda";
+        itens[1].emoji = "🪙";
+        itens[2].nome = parte === 4 ? "Obra de arte" : "Pintura";
+        itens[2].emoji = "🖼️";
+      }
+
+      // Renato fica mais rápido em cada fase; na última, não descansa.
+      renato.velocidade = [0, 155, 190, 225, 260, 330][parte];
       tempoEstado = 0;
       pausaRenato = false;
-      sustoYarlei = false;
 
-      if (parte === 5) {
-        mensagem.textContent =
-          "Parte 5 — Hard AI Sim! Pegue os itens e escape para zerar o jogo!";
-      } else {
-        mensagem.textContent =
-          `Parte ${parte} começou! Pegue os três itens e encontre a saída.`;
-      }
+      mensagem.textContent =
+        parte === 3
+          ? "Presídio: encontre as três chaves e escape!"
+          : `${nomesFases[parte - 1]}: pegue os itens e encontre a saída!`;
 
       atualizarInfo();
     }
@@ -510,20 +546,23 @@
     function reiniciarJogo() {
       parte = 1;
       acabou = false;
+      mapa = criarMapa(parte);
+      reiniciarPosicoes();
+
+      itens[0].nome = "Diamante";
+      itens[0].emoji = "💎";
+      itens[1].nome = "Moeda";
+      itens[1].emoji = "🪙";
+      itens[2].nome = "Pintura";
+      itens[2].emoji = "🖼️";
+
+      itens.forEach((item) => {
+        item.pego = false;
+      });
+
+      renato.velocidade = 155;
       tempoEstado = 0;
       pausaRenato = false;
-      sustoYarlei = false;
-
-      jogador.x = 2.5 * tamanho;
-      jogador.y = 2.5 * tamanho;
-      renato.x = 29.5 * tamanho;
-      renato.y = 21.5 * tamanho;
-      renato.velocidade = 155;
-
-      for (const item of itens) {
-        item.pego = false;
-      }
-
       mensagem.textContent =
         "Pegue os três itens e encontre a saída verde!";
       atualizarInfo();
@@ -534,36 +573,20 @@
       ultimoTempo = tempoAtual;
 
       if (!acabou) {
-        tempoEstado += dt;
-
-        // Renato persegue por 20 segundos e descansa por 10.
-        if (!pausaRenato && tempoEstado >= 20) {
-          pausaRenato = true;
-          sustoYarlei = true;
-          tempoEstado = 0;
-          mensagem.textContent =
-            "Yarlei apareceu! Renato está descansando.";
-        } else if (pausaRenato && tempoEstado >= 10) {
-          pausaRenato = false;
-          sustoYarlei = false;
-          tempoEstado = 0;
-          mensagem.textContent = "Renato voltou a perseguir você!";
-        }
-
-        // Movimento do jogador pelo teclado ou pelos botões.
         let dx = 0;
         let dy = 0;
 
-        if (teclas["arrowup"] || teclas["w"]) dy--;
-        if (teclas["arrowdown"] || teclas["s"]) dy++;
-        if (teclas["arrowleft"] || teclas["a"]) dx--;
-        if (teclas["arrowright"] || teclas["d"]) dx++;
+        if (teclas.arrowup || teclas.w) dy--;
+        if (teclas.arrowdown || teclas.s) dy++;
+        if (teclas.arrowleft || teclas.a) dx--;
+        if (teclas.arrowright || teclas.d) dx++;
 
-        if (dx !== 0 || dy !== 0) {
+        if (dx || dy) {
           const distancia = Math.hypot(dx, dy);
-          dx = (dx / distancia) * jogador.velocidade * dt;
-          dy = (dy / distancia) * jogador.velocidade * dt;
-          moverJogador(dx, dy);
+          moverJogador(
+            (dx / distancia) * jogador.velocidade * dt,
+            (dy / distancia) * jogador.velocidade * dt
+          );
         }
 
         // Coleta os itens ao encostar neles.
@@ -575,58 +598,76 @@
 
           if (Math.hypot(jogador.x - itemX, jogador.y - itemY) < 20) {
             item.pego = true;
-            mensagem.textContent = `Você encontrou: ${item.nome}!`;
+            mensagem.textContent = `Você pegou: ${item.nome}!`;
           }
         }
 
-        // Renato segue o caminho até o jogador.
+        // Renato descansa nas fases 1 a 4. Na fase 5, persegue sem parar.
+        if (parte < 5) {
+          tempoEstado += dt;
+
+          if (!pausaRenato && tempoEstado >= 20) {
+            pausaRenato = true;
+            tempoEstado = 0;
+            mensagem.textContent = "Renato está descansando. Aproveite!";
+          } else if (pausaRenato && tempoEstado >= 8) {
+            pausaRenato = false;
+            tempoEstado = 0;
+            mensagem.textContent = "Renato voltou a perseguir você!";
+          }
+        } else {
+          pausaRenato = false;
+        }
+
+        // Renato persegue o jogador usando o caminho do labirinto.
         if (!pausaRenato) {
           const passo = acharProximoPasso();
 
           if (passo) {
             const alvoX = passo.x * tamanho + tamanho / 2;
             const alvoY = passo.y * tamanho + tamanho / 2;
-            const diferencaX = alvoX - renato.x;
-            const diferencaY = alvoY - renato.y;
-            const distancia = Math.hypot(diferencaX, diferencaY);
+            const difX = alvoX - renato.x;
+            const difY = alvoY - renato.y;
+            const distancia = Math.hypot(difX, difY);
 
             if (distancia > 1) {
               const movimento = Math.min(renato.velocidade * dt, distancia);
-              const movimentoX = (diferencaX / distancia) * movimento;
-              const movimentoY = (diferencaY / distancia) * movimento;
+              const movimentoX = (difX / distancia) * movimento;
+              const movimentoY = (difY / distancia) * movimento;
 
               if (podeMover(renato.x + movimentoX, renato.y, 10)) {
                 renato.x += movimentoX;
               }
-
               if (podeMover(renato.x, renato.y + movimentoY, 10)) {
                 renato.y += movimentoY;
               }
             }
           }
 
-          // Renato captura o jogador.
           if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
             acabou = true;
             mensagem.textContent =
-              "Renato capturou você! Toque em Recomeçar do início.";
+              "Renato pegou você! Toque em Recomeçar do início.";
             tocarSomAssustador();
           }
         }
 
-        // Só é possível sair depois de pegar todos os itens.
+        // A saída só abre quando os três itens foram encontrados.
         const todosItensPegos = itens.every((item) => item.pego);
         const saidaX = saida.x * tamanho + tamanho / 2;
         const saidaY = saida.y * tamanho + tamanho / 2;
         const pertoDaSaida =
           Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20;
 
-        if (!acabou && pertoDaSaida) {
+        if (!acabou && pertoDaSaida && !contadorSaida) {
           if (todosItensPegos) {
-            iniciarProximaParte();
+            contadorSaida = true;
+            iniciarProximaFase();
+            setTimeout(() => {
+              contadorSaida = false;
+            }, 500);
           } else {
-            mensagem.textContent =
-              "A saída está trancada! Encontre os três itens.";
+            mensagem.textContent = "A saída está trancada! Encontre os itens.";
           }
         }
       }
@@ -635,9 +676,12 @@
       requestAnimationFrame(atualizar);
     }
 
-    // Inicia o jogo
+    document
+      .getElementById("reiniciar")
+      .addEventListener("click", reiniciarJogo);
+
+    mapa = criarMapa(parte);
     atualizarInfo();
-    desenhar();
     requestAnimationFrame(atualizar);
   </script>
 </body>
