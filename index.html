@@ -27,7 +27,10 @@
       touch-action: none;
     }
 
-    #mensagem { color: #ffb8c8; min-height: 24px; }
+    #mensagem {
+      color: #ffb8c8;
+      min-height: 24px;
+    }
 
     #controles {
       display: grid;
@@ -52,11 +55,20 @@
     #esquerda { grid-area: 2 / 1; }
     #baixo { grid-area: 2 / 2; }
     #direita { grid-area: 2 / 3; }
+
+    #reiniciar {
+      padding: 10px 18px;
+      border: 2px solid #b995cb;
+      border-radius: 10px;
+      background: #392944;
+      color: white;
+      font-size: 16px;
+    }
   </style>
 </head>
 <body>
   <h1>A Casa de Renato</h1>
-  <div id="info">Itens: 0 de 3</div>
+  <div id="info">Parte 1 de 5 — Itens: 0 de 3</div>
   <div id="mensagem">Pegue os três itens e encontre a saída verde!</div>
 
   <canvas id="jogo" width="800" height="600"></canvas>
@@ -68,25 +80,28 @@
     <button id="direita" aria-label="Direita">➡️</button>
   </div>
 
-  <p></p>
-  <button onclick="location.reload()">Recomeçar</button>
+  <p>
+    <button id="reiniciar" onclick="reiniciarJogo()">
+      Recomeçar do início
+    </button>
+  </p>
 
   <script>
     "use strict";
 
     const canvas = document.getElementById("jogo");
     const ctx = canvas.getContext("2d");
-    const fotoYarlei = new Image();
-    fotoYarlei.src = "yarlei.jpg";
     const mensagem = document.getElementById("mensagem");
     const info = document.getElementById("info");
+
+    const fotoYarlei = new Image();
+    fotoYarlei.src = "yarlei.jpg";
 
     const tamanho = 25;
     const colunas = 32;
     const linhas = 24;
     const teclas = {};
 
-    // # representa parede; espaço representa chão.
     const mapa = Array.from({ length: linhas }, (_, y) =>
       Array.from({ length: colunas }, (_, x) =>
         x === 0 || y === 0 || x === colunas - 1 || y === linhas - 1
@@ -95,21 +110,22 @@
       )
     );
 
-    // Paredes internas com passagens.
     for (let x = 5; x < 27; x++) {
       if (x !== 10 && x !== 21) mapa[7][x] = "#";
     }
+
     for (let x = 3; x < 25; x++) {
       if (x !== 8 && x !== 17) mapa[15][x] = "#";
     }
+
     for (let y = 3; y < 20; y++) {
       if (y !== 10 && y !== 18) mapa[y][12] = "#";
     }
+
     for (let y = 4; y < 22; y++) {
       if (y !== 12 && y !== 19) mapa[y][22] = "#";
     }
 
-    // Obstáculos extras. Cada par indica coluna e linha.
     const obstaculos = [
       [3, 5], [4, 5], [8, 3], [9, 3], [15, 4], [16, 4],
       [25, 5], [27, 9], [5, 11], [6, 11], [9, 12], [10, 12],
@@ -123,7 +139,6 @@
       mapa[y][x] = "#";
     }
 
-    // Escadas desenhadas no chão; não bloqueiam o caminho.
     const escadas = [
       { x: 7, y: 9, largura: 4, altura: 3 },
       { x: 24, y: 9, largura: 4, altura: 3 },
@@ -149,21 +164,26 @@
     ];
 
     const saida = { x: 29, y: 2 };
+
+    let parte = 1;
     let acabou = false;
     let tempoEstado = 0;
     let pausaRenato = false;
     let sustoYarlei = false;
     let ultimoTempo = performance.now();
+    function atualizarInfo() {
+      const encontrados = itens.filter((item) => item.pego).length;
+      const nomeParte = parte === 5 ? "Hard AI Sim" : `Parte ${parte} de 5`;
+      info.textContent =
+        `${nomeParte} — Itens: ${encontrados} de ${itens.length}`;
+    }
 
-
-    // Verifica se há uma parede na posição indicada.
     function paredeNaPosicao(x, y) {
       const coluna = Math.floor(x / tamanho);
       const linha = Math.floor(y / tamanho);
       return !mapa[linha] || mapa[linha][coluna] === "#";
     }
 
-    // Verifica se o personagem pode ocupar essa posição.
     function podeMover(x, y, raio = 9) {
       return !paredeNaPosicao(x - raio, y - raio) &&
              !paredeNaPosicao(x + raio, y - raio) &&
@@ -218,7 +238,6 @@
     configurarBotao("esquerda", "arrowleft");
     configurarBotao("direita", "arrowright");
 
-    // Toca um som assustador quando Renato captura o jogador.
     function tocarSomAssustador() {
       const AudioContextClass =
         window.AudioContext || window.webkitAudioContext;
@@ -248,7 +267,7 @@
       });
     }
 
-    // Calcula um caminho pelos corredores até o jogador.
+    // Procura um caminho pelos corredores até o jogador.
     function acharProximoPasso() {
       const inicio = {
         x: Math.floor(renato.x / tamanho),
@@ -307,7 +326,6 @@
 
       return passo;
     }
-
     function desenhar() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -326,7 +344,7 @@
         }
       }
 
-      // Desenha as escadas no chão, com degraus visíveis.
+      // Desenha as escadas decorativas.
       for (const escada of escadas) {
         const x = escada.x * tamanho;
         const y = escada.y * tamanho;
@@ -335,11 +353,9 @@
 
         ctx.fillStyle = "#79512f";
         ctx.fillRect(x, y, largura, altura);
-
         ctx.strokeStyle = "#d2a66c";
         ctx.lineWidth = 4;
 
-        // Laterais da escada.
         ctx.beginPath();
         ctx.moveTo(x + 5, y + 3);
         ctx.lineTo(x + 5, y + altura - 3);
@@ -347,18 +363,16 @@
         ctx.lineTo(x + largura - 5, y + altura - 3);
         ctx.stroke();
 
-        // Degraus atravessados no chão.
-        const numeroDegraus = 5;
-        for (let i = 1; i <= numeroDegraus; i++) {
-          const degrauY = y + (altura * i) / (numeroDegraus + 1);
+        for (let i = 1; i <= 5; i++) {
+          const degrauY = y + (altura * i) / 6;
           ctx.beginPath();
           ctx.moveTo(x + 5, degrauY);
           ctx.lineTo(x + largura - 5, degrauY);
           ctx.stroke();
         }
-
-        ctx.lineWidth = 1;
       }
+
+      ctx.lineWidth = 1;
 
       // Desenha a saída.
       ctx.fillStyle = "#38b764";
@@ -368,12 +382,11 @@
         tamanho,
         tamanho
       );
-
       ctx.fillStyle = "white";
       ctx.font = "12px Arial";
       ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
 
-      // Desenha os itens ainda não coletados.
+      // Desenha os itens não coletados.
       for (const item of itens) {
         if (!item.pego) {
           ctx.font = "20px Arial";
@@ -391,7 +404,7 @@
       ctx.arc(jogador.x, jogador.y, 10, 0, Math.PI * 2);
       ctx.fill();
 
-      // Desenha Renato quando ele não está fazendo a pausa.
+      // Desenha Renato se ele não estiver descansando.
       if (!pausaRenato) {
         ctx.fillStyle = "#bd334b";
         ctx.beginPath();
@@ -403,7 +416,7 @@
         ctx.fillText("Renato", renato.x - 19, renato.y - 16);
       }
 
-      // Foto e aviso durante a aparição de Yarlei.
+      // Mostra a foto durante a aparição de Yarlei.
       if (sustoYarlei) {
         ctx.fillStyle = "rgba(20, 0, 10, 0.82)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -416,6 +429,7 @@
         if (fotoYarlei.complete && fotoYarlei.naturalWidth > 0) {
           const largura = 260;
           const altura = 300;
+
           ctx.drawImage(
             fotoYarlei,
             (canvas.width - largura) / 2,
@@ -438,25 +452,6 @@
           canvas.width / 2,
           435
         );
-
-        ctx.textAlign = "left";
-      }
-      if (sustoYarlei) {
-        ctx.fillStyle = "rgba(70, 0, 20, 0.78)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.textAlign = "center";
-        ctx.fillStyle = "white";
-        ctx.font = "bold 56px Arial";
-        ctx.fillText("YARLEI!", canvas.width / 2, canvas.height / 2);
-
-        ctx.font = "20px Arial";
-        ctx.fillText(
-          "Renato está descansando...",
-          canvas.width / 2,
-          canvas.height / 2 + 38
-        );
-
         ctx.textAlign = "left";
       }
 
@@ -472,9 +467,68 @@
         ctx.textAlign = "left";
       }
 
-      const encontrados = itens.filter((item) => item.pego).length;
-      info.textContent = `Itens: ${encontrados} de ${itens.length}`;
+      atualizarInfo();
     }
+
+    function iniciarProximaParte() {
+      if (parte === 5) {
+        acabou = true;
+        mensagem.textContent =
+          "Você zerou o jogo! Venceu o Hard AI Sim! 🏆";
+        return;
+      }
+
+      parte++;
+
+      jogador.x = 2.5 * tamanho;
+      jogador.y = 2.5 * tamanho;
+      renato.x = 29.5 * tamanho;
+      renato.y = 21.5 * tamanho;
+
+      for (const item of itens) {
+        item.pego = false;
+      }
+
+      // Renato fica mais rápido a cada parte.
+      renato.velocidade = 155 + (parte - 1) * 25;
+
+      tempoEstado = 0;
+      pausaRenato = false;
+      sustoYarlei = false;
+
+      if (parte === 5) {
+        mensagem.textContent =
+          "Parte 5 — Hard AI Sim! Pegue os itens e escape para zerar o jogo!";
+      } else {
+        mensagem.textContent =
+          `Parte ${parte} começou! Pegue os três itens e encontre a saída.`;
+      }
+
+      atualizarInfo();
+    }
+
+    function reiniciarJogo() {
+      parte = 1;
+      acabou = false;
+      tempoEstado = 0;
+      pausaRenato = false;
+      sustoYarlei = false;
+
+      jogador.x = 2.5 * tamanho;
+      jogador.y = 2.5 * tamanho;
+      renato.x = 29.5 * tamanho;
+      renato.y = 21.5 * tamanho;
+      renato.velocidade = 155;
+
+      for (const item of itens) {
+        item.pego = false;
+      }
+
+      mensagem.textContent =
+        "Pegue os três itens e encontre a saída verde!";
+      atualizarInfo();
+    }
+
     function atualizar(tempoAtual) {
       const dt = Math.min((tempoAtual - ultimoTempo) / 1000, 0.05);
       ultimoTempo = tempoAtual;
@@ -487,7 +541,8 @@
           pausaRenato = true;
           sustoYarlei = true;
           tempoEstado = 0;
-          mensagem.textContent = "Yarlei apareceu! Renato está descansando.";
+          mensagem.textContent =
+            "Yarlei apareceu! Renato está descansando.";
         } else if (pausaRenato && tempoEstado >= 10) {
           pausaRenato = false;
           sustoYarlei = false;
@@ -499,10 +554,10 @@
         let dx = 0;
         let dy = 0;
 
-        if (teclas["arrowup"] || teclas["w"]) dy -= 1;
-        if (teclas["arrowdown"] || teclas["s"]) dy += 1;
-        if (teclas["arrowleft"] || teclas["a"]) dx -= 1;
-        if (teclas["arrowright"] || teclas["d"]) dx += 1;
+        if (teclas["arrowup"] || teclas["w"]) dy--;
+        if (teclas["arrowdown"] || teclas["s"]) dy++;
+        if (teclas["arrowleft"] || teclas["a"]) dx--;
+        if (teclas["arrowright"] || teclas["d"]) dx++;
 
         if (dx !== 0 || dy !== 0) {
           const distancia = Math.hypot(dx, dy);
@@ -550,15 +605,16 @@
             }
           }
 
-          // Renato captura o jogador: toca o som assustador.
+          // Renato captura o jogador.
           if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
             acabou = true;
-            mensagem.textContent = "Renato capturou você! Tente novamente.";
+            mensagem.textContent =
+              "Renato capturou você! Toque em Recomeçar do início.";
             tocarSomAssustador();
           }
         }
 
-        // A saída só abre quando todos os itens forem coletados.
+        // Só é possível sair depois de pegar todos os itens.
         const todosItensPegos = itens.every((item) => item.pego);
         const saidaX = saida.x * tamanho + tamanho / 2;
         const saidaY = saida.y * tamanho + tamanho / 2;
@@ -567,8 +623,7 @@
 
         if (!acabou && pertoDaSaida) {
           if (todosItensPegos) {
-            acabou = true;
-            mensagem.textContent = "Você escapou da casa! Parabéns!";
+            iniciarProximaParte();
           } else {
             mensagem.textContent =
               "A saída está trancada! Encontre os três itens.";
@@ -580,7 +635,8 @@
       requestAnimationFrame(atualizar);
     }
 
-    // Desenha o jogo e inicia o ciclo de atualização.
+    // Inicia o jogo
+    atualizarInfo();
     desenhar();
     requestAnimationFrame(atualizar);
   </script>
