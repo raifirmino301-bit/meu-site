@@ -4,413 +4,585 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101116">
-  <link rel="manifest" href="./manifest.json">
-
-  <title>Minhas Músicas Playlist</title>
-
+  <title>A Casa de Renato</title>
   <style>
-    * { box-sizing: border-box; }
-
     body {
       margin: 0;
-      padding: 24px 18px 110px;
-      background: #101116;
-      color: #f8f8fa;
-      font-family: Arial, sans-serif;
-    }
-
-    header {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      margin-bottom: 30px;
-    }
-
-    .logo {
-      width: 68px;
-      height: 68px;
-      flex: 0 0 68px;
-      border-radius: 18px;
-      box-shadow: 0 5px 18px #7852f655;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(24px, 6vw, 38px);
-    }
-
-    .subtitulo {
-      color: #aaaab0;
-      font-size: 16px;
-      margin-top: 6px;
-    }
-
-    .instagram {
-      color: #d5c9ff;
-      font-size: 14px;
-      margin-top: 6px;
-    }
-
-    .abas {
-      display: flex;
-      gap: 12px;
-      margin: 30px 0 26px;
-    }
-
-    button, .botao-adicionar {
-      border: 0;
+      padding: 12px;
+      background: #100d14;
       color: white;
-      font: inherit;
-      cursor: pointer;
-    }
-
-    .aba {
-      padding: 13px 22px;
-      border-radius: 30px;
-      background: #24242e;
-      font-size: 17px;
-    }
-
-    .aba.ativa, .botao-adicionar { background: #7852f6; }
-
-    .botao-adicionar {
-      display: inline-block;
-      padding: 14px 20px;
-      border-radius: 30px;
-      font-size: 17px;
-      margin-bottom: 16px;
-    }
-
-    #seletor { display: none; }
-    .tela { display: none; }
-    .tela.ativa { display: block; }
-
-    .vazio {
-      color: #aaaab0;
+      font-family: Arial, sans-serif;
       text-align: center;
-      line-height: 1.5;
-      margin: 35px 8px;
     }
 
-    .musica {
-      display: flex;
-      align-items: center;
-      gap: 13px;
-      padding: 12px 4px;
-      border-bottom: 1px solid #292a32;
-      cursor: pointer;
+    h1 { color: #e8c8ff; }
+
+    canvas {
+      display: block;
+      width: min(800px, 96vw);
+      height: auto;
+      margin: 12px auto;
+      border: 3px solid #6c4a78;
+      background: #211d22;
+      touch-action: none;
     }
 
-    .capa {
-      width: 55px;
-      height: 55px;
-      flex: 0 0 55px;
+    #mensagem { color: #ffb8c8; min-height: 24px; }
+
+    #controles {
       display: grid;
-      place-items: center;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #7852f6, #d34bb8);
-      font-size: 25px;
-    }
-
-    .detalhes { min-width: 0; flex: 1; }
-
-    .nome {
-      font-weight: bold;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-
-    .info {
-      color: #aaaab0;
-      font-size: 14px;
-      margin-top: 5px;
-    }
-
-    .player {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: #22222c;
-      border-top: 1px solid #393943;
-    }
-
-    .player .capa {
-      width: 48px;
-      height: 48px;
-      flex-basis: 48px;
-    }
-
-    .tocando { min-width: 0; flex: 1; }
-    .controles { display: flex; align-items: center; gap: 5px; }
-    .controle { background: transparent; font-size: 22px; padding: 6px 3px; }
-    audio { display: none; }
-
-    #avisoInicial {
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: flex;
-      align-items: center;
+      grid-template: 56px 56px / 64px 64px 64px;
+      gap: 6px;
       justify-content: center;
-      padding: 20px;
-      background: rgba(10, 10, 15, 0.92);
+      margin: 14px auto;
+      touch-action: none;
     }
 
-    .caixa-aviso {
-      width: 100%;
-      max-width: 420px;
-      padding: 26px 22px;
-      border: 1px solid #393943;
-      border-radius: 22px;
-      background: #22222c;
-      text-align: center;
-      box-shadow: 0 12px 40px #0008;
+    #controles button {
+      border: 2px solid #b995cb;
+      border-radius: 12px;
+      background: #392944;
+      color: white;
+      font-size: 26px;
+      touch-action: none;
+      user-select: none;
     }
 
-    .caixa-aviso h2 { margin: 12px 0; }
-    .caixa-aviso p { color: #ddd; line-height: 1.5; }
-
-    .botao-entendi {
-      margin-top: 10px;
-      padding: 13px 20px;
-      border-radius: 25px;
-      background: #7852f6;
-      font-weight: bold;
-    }
+    #cima { grid-area: 1 / 2; }
+    #esquerda { grid-area: 2 / 1; }
+    #baixo { grid-area: 2 / 2; }
+    #direita { grid-area: 2 / 3; }
   </style>
 </head>
-
 <body>
-  <div id="avisoInicial">
-    <div class="caixa-aviso">
-      <div class="logo" style="margin: 0 auto 12px;">
-        <svg viewBox="0 0 100 100" width="68" height="68"
-             xmlns="http://www.w3.org/2000/svg" aria-label="Logo">
-          <defs>
-            <linearGradient id="fundoAviso" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#7852f6"/>
-              <stop offset="100%" stop-color="#d34bb8"/>
-            </linearGradient>
-          </defs>
-          <rect width="100" height="100" rx="22" fill="url(#fundoAviso)"/>
-          <path d="M25 53v-5a25 25 0 0 1 50 0v5"
-                fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
-          <rect x="19" y="49" width="15" height="27" rx="7" fill="white"/>
-          <rect x="66" y="49" width="15" height="27" rx="7" fill="white"/>
-          <path d="M54 34v24l-17 5V43l17-5v-4z" fill="#ffe45e"/>
-          <circle cx="41" cy="68" r="7" fill="#ffe45e"/>
-          <circle cx="58" cy="63" r="7" fill="#ffe45e"/>
-        </svg>
-      </div>
+  <h1>A Casa de Renato</h1>
+  <div id="info">Itens: 0 de 3</div>
+  <div id="mensagem">Pegue os três itens e encontre a saída verde!</div>
 
-      <h2>Bem-vindo ao Minhas Músicas Playlist!</h2>
-      <p>
-        Escolha arquivos de áudio que você tenha autorização para usar.
-        Salve-os no celular e toque em <strong>Adicionar músicas</strong>
-        para selecioná-los.
-      </p>
-      <p>Se divirta! 🎶</p>
-      <button class="botao-entendi" onclick="fecharAviso()">
-        Entendi, vamos lá!
-      </button>
-    </div>
+  <canvas id="jogo" width="800" height="600"></canvas>
+
+  <div id="controles">
+    <button id="cima" aria-label="Cima">⬆️</button>
+    <button id="esquerda" aria-label="Esquerda">⬅️</button>
+    <button id="baixo" aria-label="Baixo">⬇️</button>
+    <button id="direita" aria-label="Direita">➡️</button>
   </div>
 
-  <header>
-    <svg class="logo" viewBox="0 0 100 100"
-         xmlns="http://www.w3.org/2000/svg" aria-label="Logo">
-      <defs>
-        <linearGradient id="fundoCabecalho" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#7852f6"/>
-          <stop offset="100%" stop-color="#d34bb8"/>
-        </linearGradient>
-      </defs>
-      <rect width="100" height="100" rx="22" fill="url(#fundoCabecalho)"/>
-      <path d="M25 53v-5a25 25 0 0 1 50 0v5"
-            fill="none" stroke="white" stroke-width="7" stroke-linecap="round"/>
-      <rect x="19" y="49" width="15" height="27" rx="7" fill="white"/>
-      <rect x="66" y="49" width="15" height="27" rx="7" fill="white"/>
-      <path d="M54 34v24l-17 5V43l17-5v-4z" fill="#ffe45e"/>
-      <circle cx="41" cy="68" r="7" fill="#ffe45e"/>
-      <circle cx="58" cy="63" r="7" fill="#ffe45e"/>
-    </svg>
-
-    <div>
-      <h1>Minhas Músicas Playlist</h1>
-      <div class="subtitulo">Suas músicas, do seu jeito</div>
-      <div class="instagram">@Ray.ofc_122 Instagram</div>
-    </div>
-  </header>
-
-  <nav class="abas">
-    <button class="aba ativa" onclick="abrirTela('musicas', this)">Músicas</button>
-    <button class="aba" onclick="abrirTela('playlists', this)">Playlists</button>
-  </nav>
-
-  <section id="musicas" class="tela ativa">
-    <label class="botao-adicionar" for="seletor">＋ Adicionar músicas</label>
-    <input id="seletor" type="file" accept="audio/*" multiple>
-    <div id="listaMusicas" class="vazio">
-      Ainda não há músicas. Toque em “Adicionar músicas” para escolher arquivos do celular.
-    </div>
-  </section>
-
-  <section id="playlists" class="tela">
-    <button class="botao-adicionar" onclick="criarPlaylist()">＋ Criar playlist</button>
-    <div id="listaPlaylists" class="vazio">Suas playlists aparecerão aqui.</div>
-  </section>
-
-  <div class="player">
-    <div class="capa">♫</div>
-    <div class="tocando">
-      <div class="nome" id="nomeAtual">Nenhuma música</div>
-      <div class="info">Minhas Músicas Playlist</div>
-    </div>
-    <div class="controles">
-      <button class="controle" onclick="anterior()" aria-label="Anterior">⏮</button>
-      <button class="controle" id="botaoPlay" onclick="playPause()" aria-label="Tocar ou pausar">▶</button>
-      <button class="controle" onclick="proxima()" aria-label="Próxima">⏭</button>
-    </div>
-  </div>
-
-  <audio id="audio"></audio>
+  <p>Controle com as setas, WASD ou os botões na tela.</p>
+  <button onclick="location.reload()">Recomeçar</button>
 
   <script>
-    const audio = document.getElementById("audio");
-    const seletor = document.getElementById("seletor");
-    const listaMusicas = document.getElementById("listaMusicas");
-    const nomeAtual = document.getElementById("nomeAtual");
-    const botaoPlay = document.getElementById("botaoPlay");
+    "use strict";
 
-    let musicas = [];
-    let indiceAtual = -1;
-    let playlists = [];
+    const canvas = document.getElementById("jogo");
+    const ctx = canvas.getContext("2d");
+    const fotoYarlei = new Image();
+    fotoYarlei.src = "yarlei.jpg";
+    const mensagem = document.getElementById("mensagem");
+    const info = document.getElementById("info");
 
-    function fecharAviso() {
-      document.getElementById("avisoInicial").style.display = "none";
+    const tamanho = 25;
+    const colunas = 32;
+    const linhas = 24;
+    const teclas = {};
+
+    // # representa parede; espaço representa chão.
+    const mapa = Array.from({ length: linhas }, (_, y) =>
+      Array.from({ length: colunas }, (_, x) =>
+        x === 0 || y === 0 || x === colunas - 1 || y === linhas - 1
+          ? "#"
+          : " "
+      )
+    );
+
+    // Paredes internas com passagens.
+    for (let x = 5; x < 27; x++) {
+      if (x !== 10 && x !== 21) mapa[7][x] = "#";
+    }
+    for (let x = 3; x < 25; x++) {
+      if (x !== 8 && x !== 17) mapa[15][x] = "#";
+    }
+    for (let y = 3; y < 20; y++) {
+      if (y !== 10 && y !== 18) mapa[y][12] = "#";
+    }
+    for (let y = 4; y < 22; y++) {
+      if (y !== 12 && y !== 19) mapa[y][22] = "#";
     }
 
-    seletor.addEventListener("change", function () {
-      Array.from(this.files).forEach(function (arquivo) {
-        musicas.push({
-          nome: arquivo.name.replace(/\.[^/.]+$/, ""),
-          url: URL.createObjectURL(arquivo)
-        });
-      });
-      mostrarMusicas();
-      this.value = "";
+    // Obstáculos extras. Cada par indica coluna e linha.
+    const obstaculos = [
+      [3, 5], [4, 5], [8, 3], [9, 3], [15, 4], [16, 4],
+      [25, 5], [27, 9], [5, 11], [6, 11], [9, 12], [10, 12],
+      [14, 9], [15, 9], [19, 10], [20, 10], [3, 18], [7, 19],
+      [8, 19], [14, 19], [18, 20], [19, 20], [25, 16], [27, 18],
+      [6, 3], [18, 3], [28, 6], [2, 9], [8, 10], [17, 12],
+      [26, 13], [10, 20], [16, 17], [29, 15]
+    ];
+
+    for (const [x, y] of obstaculos) {
+      mapa[y][x] = "#";
+    }
+
+    // Escadas desenhadas no chão; não bloqueiam o caminho.
+    const escadas = [
+      { x: 7, y: 9, largura: 4, altura: 3 },
+      { x: 24, y: 9, largura: 4, altura: 3 },
+      { x: 14, y: 17, largura: 4, altura: 3 }
+    ];
+
+    const jogador = {
+      x: 2.5 * tamanho,
+      y: 2.5 * tamanho,
+      velocidade: 180
+    };
+
+    const renato = {
+      x: 29.5 * tamanho,
+      y: 21.5 * tamanho,
+      velocidade: 155
+    };
+
+    const itens = [
+      { nome: "Diamante", emoji: "💎", x: 4, y: 20, pego: false },
+      { nome: "Moeda", emoji: "🪙", x: 27, y: 4, pego: false },
+      { nome: "Pintura", emoji: "🖼️", x: 18, y: 11, pego: false }
+    ];
+
+    const saida = { x: 29, y: 2 };
+    let acabou = false;
+    let tempoEstado = 0;
+    let pausaRenato = false;
+    let sustoYarlei = false;
+    let ultimoTempo = performance.now();
+
+
+    // Verifica se há uma parede na posição indicada.
+    function paredeNaPosicao(x, y) {
+      const coluna = Math.floor(x / tamanho);
+      const linha = Math.floor(y / tamanho);
+      return !mapa[linha] || mapa[linha][coluna] === "#";
+    }
+
+    // Verifica se o personagem pode ocupar essa posição.
+    function podeMover(x, y, raio = 9) {
+      return !paredeNaPosicao(x - raio, y - raio) &&
+             !paredeNaPosicao(x + raio, y - raio) &&
+             !paredeNaPosicao(x - raio, y + raio) &&
+             !paredeNaPosicao(x + raio, y + raio);
+    }
+
+    function moverJogador(dx, dy) {
+      if (podeMover(jogador.x + dx, jogador.y)) {
+        jogador.x += dx;
+      }
+      if (podeMover(jogador.x, jogador.y + dy)) {
+        jogador.y += dy;
+      }
+    }
+
+    // Controles do teclado.
+    window.addEventListener("keydown", (evento) => {
+      const tecla = evento.key.toLowerCase();
+      teclas[tecla] = true;
+
+      if (tecla.startsWith("arrow") || tecla === " ") {
+        evento.preventDefault();
+      }
     });
 
-    function mostrarMusicas() {
-      listaMusicas.innerHTML = "";
+    window.addEventListener("keyup", (evento) => {
+      teclas[evento.key.toLowerCase()] = false;
+    });
 
-      if (musicas.length === 0) {
-        listaMusicas.className = "vazio";
-        listaMusicas.textContent =
-          "Ainda não há músicas. Toque em “Adicionar músicas” para escolher arquivos do celular.";
-        return;
+    // Botões para celular e tablet.
+    function configurarBotao(id, tecla) {
+      const botao = document.getElementById(id);
+
+      botao.addEventListener("pointerdown", (evento) => {
+        evento.preventDefault();
+        teclas[tecla] = true;
+        botao.setPointerCapture(evento.pointerId);
+      });
+
+      const soltar = () => {
+        teclas[tecla] = false;
+      };
+
+      botao.addEventListener("pointerup", soltar);
+      botao.addEventListener("pointercancel", soltar);
+      botao.addEventListener("lostpointercapture", soltar);
+    }
+
+    configurarBotao("cima", "arrowup");
+    configurarBotao("baixo", "arrowdown");
+    configurarBotao("esquerda", "arrowleft");
+    configurarBotao("direita", "arrowright");
+
+    // Toca um som assustador quando Renato captura o jogador.
+    function tocarSomAssustador() {
+      const AudioContextClass =
+        window.AudioContext || window.webkitAudioContext;
+
+      if (!AudioContextClass) return;
+
+      const audio = new AudioContextClass();
+      const agora = audio.currentTime;
+      const oscilador = audio.createOscillator();
+      const volume = audio.createGain();
+
+      oscilador.type = "sawtooth";
+      oscilador.frequency.setValueAtTime(180, agora);
+      oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
+
+      volume.gain.setValueAtTime(0.001, agora);
+      volume.gain.exponentialRampToValueAtTime(0.35, agora + 0.08);
+      volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.4);
+
+      oscilador.connect(volume);
+      volume.connect(audio.destination);
+      oscilador.start(agora);
+      oscilador.stop(agora + 1.4);
+
+      oscilador.addEventListener("ended", () => {
+        audio.close();
+      });
+    }
+
+    // Calcula um caminho pelos corredores até o jogador.
+    function acharProximoPasso() {
+      const inicio = {
+        x: Math.floor(renato.x / tamanho),
+        y: Math.floor(renato.y / tamanho)
+      };
+
+      const destino = {
+        x: Math.floor(jogador.x / tamanho),
+        y: Math.floor(jogador.y / tamanho)
+      };
+
+      const chave = (p) => `${p.x},${p.y}`;
+      const fila = [inicio];
+      const anteriores = new Map();
+      anteriores.set(chave(inicio), null);
+
+      const direcoes = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+      for (let i = 0; i < fila.length; i++) {
+        const atual = fila[i];
+
+        if (atual.x === destino.x && atual.y === destino.y) {
+          break;
+        }
+
+        for (const [dx, dy] of direcoes) {
+          const proximo = {
+            x: atual.x + dx,
+            y: atual.y + dy
+          };
+
+          if (
+            mapa[proximo.y]?.[proximo.x] !== " " ||
+            anteriores.has(chave(proximo))
+          ) {
+            continue;
+          }
+
+          anteriores.set(chave(proximo), atual);
+          fila.push(proximo);
+        }
       }
 
-      listaMusicas.className = "";
-
-      musicas.forEach(function (musica, indice) {
-        const item = document.createElement("div");
-        item.className = "musica";
-        item.innerHTML =
-          '<div class="capa">♫</div>' +
-          '<div class="detalhes"><div class="nome"></div>' +
-          '<div class="info">Arquivo do celular</div></div>';
-
-        item.querySelector(".nome").textContent = musica.nome;
-        item.onclick = function () { tocar(indice); };
-        listaMusicas.appendChild(item);
-      });
-    }
-
-    function tocar(indice) {
-      if (musicas.length === 0) return;
-      indiceAtual = indice;
-      audio.src = musicas[indice].url;
-      nomeAtual.textContent = musicas[indice].nome;
-
-      audio.play().catch(function () {
-        alert("Não foi possível tocar esse arquivo. Tente escolher outro áudio.");
-      });
-    }
-
-    function playPause() {
-      if (indiceAtual === -1) {
-        if (musicas.length > 0) tocar(0);
-      } else if (audio.paused) {
-        audio.play();
-      } else {
-        audio.pause();
+      if (!anteriores.has(chave(destino))) {
+        return null;
       }
-    }
 
-    function proxima() {
-      if (musicas.length > 0) tocar((indiceAtual + 1) % musicas.length);
-    }
+      let passo = destino;
 
-    function anterior() {
-      if (musicas.length > 0) {
-        tocar((indiceAtual - 1 + musicas.length) % musicas.length);
+      while (
+        anteriores.get(chave(passo)) !== null &&
+        chave(anteriores.get(chave(passo))) !== chave(inicio)
+      ) {
+        passo = anteriores.get(chave(passo));
       }
+
+      return passo;
     }
 
-    audio.addEventListener("ended", proxima);
-    audio.addEventListener("play", function () { botaoPlay.textContent = "⏸"; });
-    audio.addEventListener("pause", function () { botaoPlay.textContent = "▶"; });
+    function desenhar() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    function abrirTela(id, botao) {
-      document.querySelectorAll(".tela").forEach(function (tela) {
-        tela.classList.remove("ativa");
-      });
-      document.getElementById(id).classList.add("ativa");
+      // Desenha chão e paredes.
+      for (let y = 0; y < linhas; y++) {
+        for (let x = 0; x < colunas; x++) {
+          if (mapa[y][x] === "#") {
+            ctx.fillStyle = "#514454";
+            ctx.fillRect(x * tamanho, y * tamanho, tamanho, tamanho);
+            ctx.strokeStyle = "#75657a";
+            ctx.strokeRect(x * tamanho, y * tamanho, tamanho, tamanho);
+          } else {
+            ctx.fillStyle = "#29252b";
+            ctx.fillRect(x * tamanho, y * tamanho, tamanho, tamanho);
+          }
+        }
+      }
 
-      document.querySelectorAll(".aba").forEach(function (aba) {
-        aba.classList.remove("ativa");
-      });
-      botao.classList.add("ativa");
+      // Desenha as escadas no chão, com degraus visíveis.
+      for (const escada of escadas) {
+        const x = escada.x * tamanho;
+        const y = escada.y * tamanho;
+        const largura = escada.largura * tamanho;
+        const altura = escada.altura * tamanho;
+
+        ctx.fillStyle = "#79512f";
+        ctx.fillRect(x, y, largura, altura);
+
+        ctx.strokeStyle = "#d2a66c";
+        ctx.lineWidth = 4;
+
+        // Laterais da escada.
+        ctx.beginPath();
+        ctx.moveTo(x + 5, y + 3);
+        ctx.lineTo(x + 5, y + altura - 3);
+        ctx.moveTo(x + largura - 5, y + 3);
+        ctx.lineTo(x + largura - 5, y + altura - 3);
+        ctx.stroke();
+
+        // Degraus atravessados no chão.
+        const numeroDegraus = 5;
+        for (let i = 1; i <= numeroDegraus; i++) {
+          const degrauY = y + (altura * i) / (numeroDegraus + 1);
+          ctx.beginPath();
+          ctx.moveTo(x + 5, degrauY);
+          ctx.lineTo(x + largura - 5, degrauY);
+          ctx.stroke();
+        }
+
+        ctx.lineWidth = 1;
+      }
+
+      // Desenha a saída.
+      ctx.fillStyle = "#38b764";
+      ctx.fillRect(
+        saida.x * tamanho,
+        saida.y * tamanho,
+        tamanho,
+        tamanho
+      );
+
+      ctx.fillStyle = "white";
+      ctx.font = "12px Arial";
+      ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
+
+      // Desenha os itens ainda não coletados.
+      for (const item of itens) {
+        if (!item.pego) {
+          ctx.font = "20px Arial";
+          ctx.fillText(
+            item.emoji,
+            item.x * tamanho + 2,
+            item.y * tamanho + 20
+          );
+        }
+      }
+
+      // Desenha o jogador.
+      ctx.fillStyle = "#79d8ff";
+      ctx.beginPath();
+      ctx.arc(jogador.x, jogador.y, 10, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Desenha Renato quando ele não está fazendo a pausa.
+      if (!pausaRenato) {
+        ctx.fillStyle = "#bd334b";
+        ctx.beginPath();
+        ctx.arc(renato.x, renato.y, 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "white";
+        ctx.font = "12px Arial";
+        ctx.fillText("Renato", renato.x - 19, renato.y - 16);
+      }
+
+      // Foto e aviso durante a aparição de Yarlei.
+      if (sustoYarlei) {
+        ctx.fillStyle = "rgba(20, 0, 10, 0.82)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = "white";
+        ctx.font = "bold 44px Arial";
+        ctx.fillText("YARLEI!", canvas.width / 2, 70);
+
+        if (fotoYarlei.complete && fotoYarlei.naturalWidth > 0) {
+          const largura = 260;
+          const altura = 300;
+          ctx.drawImage(
+            fotoYarlei,
+            (canvas.width - largura) / 2,
+            100,
+            largura,
+            altura
+          );
+        } else {
+          ctx.font = "18px Arial";
+          ctx.fillText(
+            "Não foi possível carregar yarlei.jpg",
+            canvas.width / 2,
+            220
+          );
+        }
+
+        ctx.font = "20px Arial";
+        ctx.fillText(
+          "Renato está descansando...",
+          canvas.width / 2,
+          435
+        );
+
+        ctx.textAlign = "left";
+      }
+      if (sustoYarlei) {
+        ctx.fillStyle = "rgba(70, 0, 20, 0.78)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = "white";
+        ctx.font = "bold 56px Arial";
+        ctx.fillText("YARLEI!", canvas.width / 2, canvas.height / 2);
+
+        ctx.font = "20px Arial";
+        ctx.fillText(
+          "Renato está descansando...",
+          canvas.width / 2,
+          canvas.height / 2 + 38
+        );
+
+        ctx.textAlign = "left";
+      }
+
+      // Sobreposição de vitória ou derrota.
+      if (acabou) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = "white";
+        ctx.font = "bold 26px Arial";
+        ctx.fillText(mensagem.textContent, canvas.width / 2, canvas.height / 2);
+        ctx.textAlign = "left";
+      }
+
+      const encontrados = itens.filter((item) => item.pego).length;
+      info.textContent = `Itens: ${encontrados} de ${itens.length}`;
+    }
+    function atualizar(tempoAtual) {
+      const dt = Math.min((tempoAtual - ultimoTempo) / 1000, 0.05);
+      ultimoTempo = tempoAtual;
+
+      if (!acabou) {
+        tempoEstado += dt;
+
+        // Renato persegue por 20 segundos e descansa por 10.
+        if (!pausaRenato && tempoEstado >= 20) {
+          pausaRenato = true;
+          sustoYarlei = true;
+          tempoEstado = 0;
+          mensagem.textContent = "Yarlei apareceu! Renato está descansando.";
+        } else if (pausaRenato && tempoEstado >= 10) {
+          pausaRenato = false;
+          sustoYarlei = false;
+          tempoEstado = 0;
+          mensagem.textContent = "Renato voltou a perseguir você!";
+        }
+
+        // Movimento do jogador pelo teclado ou pelos botões.
+        let dx = 0;
+        let dy = 0;
+
+        if (teclas["arrowup"] || teclas["w"]) dy -= 1;
+        if (teclas["arrowdown"] || teclas["s"]) dy += 1;
+        if (teclas["arrowleft"] || teclas["a"]) dx -= 1;
+        if (teclas["arrowright"] || teclas["d"]) dx += 1;
+
+        if (dx !== 0 || dy !== 0) {
+          const distancia = Math.hypot(dx, dy);
+          dx = (dx / distancia) * jogador.velocidade * dt;
+          dy = (dy / distancia) * jogador.velocidade * dt;
+          moverJogador(dx, dy);
+        }
+
+        // Coleta os itens ao encostar neles.
+        for (const item of itens) {
+          if (item.pego) continue;
+
+          const itemX = item.x * tamanho + tamanho / 2;
+          const itemY = item.y * tamanho + tamanho / 2;
+
+          if (Math.hypot(jogador.x - itemX, jogador.y - itemY) < 20) {
+            item.pego = true;
+            mensagem.textContent = `Você encontrou: ${item.nome}!`;
+          }
+        }
+
+        // Renato segue o caminho até o jogador.
+        if (!pausaRenato) {
+          const passo = acharProximoPasso();
+
+          if (passo) {
+            const alvoX = passo.x * tamanho + tamanho / 2;
+            const alvoY = passo.y * tamanho + tamanho / 2;
+            const diferencaX = alvoX - renato.x;
+            const diferencaY = alvoY - renato.y;
+            const distancia = Math.hypot(diferencaX, diferencaY);
+
+            if (distancia > 1) {
+              const movimento = Math.min(renato.velocidade * dt, distancia);
+              const movimentoX = (diferencaX / distancia) * movimento;
+              const movimentoY = (diferencaY / distancia) * movimento;
+
+              if (podeMover(renato.x + movimentoX, renato.y, 10)) {
+                renato.x += movimentoX;
+              }
+
+              if (podeMover(renato.x, renato.y + movimentoY, 10)) {
+                renato.y += movimentoY;
+              }
+            }
+          }
+
+          // Renato captura o jogador: toca o som assustador.
+          if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
+            acabou = true;
+            mensagem.textContent = "Renato capturou você! Tente novamente.";
+            tocarSomAssustador();
+          }
+        }
+
+        // A saída só abre quando todos os itens forem coletados.
+        const todosItensPegos = itens.every((item) => item.pego);
+        const saidaX = saida.x * tamanho + tamanho / 2;
+        const saidaY = saida.y * tamanho + tamanho / 2;
+        const pertoDaSaida =
+          Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20;
+
+        if (!acabou && pertoDaSaida) {
+          if (todosItensPegos) {
+            acabou = true;
+            mensagem.textContent = "Você escapou da casa! Parabéns!";
+          } else {
+            mensagem.textContent =
+              "A saída está trancada! Encontre os três itens.";
+          }
+        }
+      }
+
+      desenhar();
+      requestAnimationFrame(atualizar);
     }
 
-    function criarPlaylist() {
-      const nome = prompt("Qual será o nome da playlist?");
-      if (!nome || !nome.trim()) return;
-
-      playlists.push(nome.trim());
-      const area = document.getElementById("listaPlaylists");
-      area.className = "";
-      area.innerHTML = "";
-
-      playlists.forEach(function (titulo) {
-        const item = document.createElement("div");
-        item.className = "musica";
-        item.innerHTML =
-          '<div class="capa">📁</div>' +
-          '<div class="detalhes"><div class="nome"></div>' +
-          '<div class="info">Playlist</div></div>';
-
-        item.querySelector(".nome").textContent = titulo;
-        area.appendChild(item);
-      });
-    }
-
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js").catch(function (erro) {
-          console.log("Não foi possível registrar o app:", erro);
-        });
-      });
-    }
+    // Desenha o jogo e inicia o ciclo de atualização.
+    desenhar();
+    requestAnimationFrame(atualizar);
   </script>
- </p>@ray.ofc-122</p>
 </body>
 </html>
