@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>A Casa de Renato</title>
+
   <style>
     body {
       margin: 0;
@@ -38,22 +39,18 @@
       gap: 6px;
       justify-content: center;
       margin: 14px auto;
-      touch-action: none;
     }
 
-    #controles button, #reiniciar {
+    button {
       border: 2px solid #b995cb;
       border-radius: 12px;
       background: #392944;
       color: white;
       user-select: none;
-    }
-
-    #controles button {
-      font-size: 26px;
       touch-action: none;
     }
 
+    #controles button { font-size: 26px; }
     #cima { grid-area: 1 / 2; }
     #esquerda { grid-area: 2 / 1; }
     #baixo { grid-area: 2 / 2; }
@@ -62,6 +59,7 @@
     #reiniciar {
       padding: 10px 18px;
       font-size: 16px;
+      touch-action: auto;
     }
   </style>
 </head>
@@ -99,7 +97,7 @@
       "Fase 2 — Hospital abandonado",
       "Fase 3 — Presídio",
       "Fase 4 — Museu",
-      "Fase 5 — Terror: Hard AI Sim"
+      "Fase 5 — Casa de terror"
     ];
 
     const temas = [
@@ -113,8 +111,10 @@
     let parte = 1;
     let mapa = [];
     let acabou = false;
+    let pausaRenato = false;
+    let tempoEstado = 0;
     let ultimoTempo = performance.now();
-    let contadorSaida = false;
+    let bloqueioSaida = false;
 
     const jogador = {
       x: 62.5,
@@ -138,6 +138,7 @@
 
     const fotoYarlei = new Image();
     fotoYarlei.src = "yarlei.jpg";
+
     function criarMapa(fase) {
       const novo = Array.from({ length: linhas }, (_, y) =>
         Array.from({ length: colunas }, (_, x) =>
@@ -147,82 +148,55 @@
         )
       );
 
-      function horizontal(y, inicio, fim, abertura) {
-        for (let x = inicio; x <= fim; x++) {
+      function paredeHorizontal(y, abertura) {
+        for (let x = 2; x < colunas - 2; x++) {
           if (x !== abertura) novo[y][x] = "#";
         }
       }
 
-      function vertical(x, inicio, fim, abertura) {
-        for (let y = inicio; y <= fim; y++) {
+      function paredeVertical(x, abertura) {
+        for (let y = 2; y < linhas - 2; y++) {
           if (y !== abertura) novo[y][x] = "#";
         }
       }
 
       if (fase === 1) {
-        horizontal(7, 5, 26, 10);
-        horizontal(15, 3, 24, 8);
-        vertical(12, 3, 19, 10);
-        vertical(22, 4, 21, 12);
-
-        const obstaculos = [
-          [3, 5], [4, 5], [8, 3], [9, 3], [15, 4], [16, 4],
-          [25, 5], [27, 9], [5, 11], [6, 11], [9, 12], [10, 12],
-          [14, 9], [15, 9], [19, 10], [20, 10], [3, 18], [7, 19],
-          [8, 19], [14, 19], [18, 20], [19, 20], [25, 16], [27, 18],
-          [6, 3], [18, 3], [28, 6], [2, 9], [8, 10], [17, 12],
-          [26, 13], [10, 20], [16, 17], [29, 15]
-        ];
-
-        for (const [x, y] of obstaculos) {
-          novo[y][x] = "#";
-        }
+        paredeHorizontal(7, 10);
+        paredeHorizontal(15, 23);
+        paredeVertical(12, 10);
+        paredeVertical(22, 16);
       } else if (fase === 2) {
-        // Hospital: corredores compridos e salas laterais.
-        horizontal(6, 2, 29, 15);
-        horizontal(12, 2, 29, 7);
-        horizontal(18, 2, 29, 24);
-        vertical(9, 3, 21, 8);
-        vertical(20, 2, 21, 15);
-        vertical(26, 3, 21, 10);
+        paredeHorizontal(5, 25);
+        paredeHorizontal(10, 7);
+        paredeHorizontal(15, 24);
+        paredeHorizontal(20, 9);
       } else if (fase === 3) {
-        // Presídio: corredores de celas.
-        horizontal(5, 2, 29, 25);
-        horizontal(11, 2, 29, 7);
-        horizontal(17, 2, 29, 23);
-        vertical(8, 3, 21, 15);
-        vertical(16, 3, 21, 8);
-        vertical(24, 3, 21, 19);
+        paredeVertical(6, 18);
+        paredeVertical(12, 5);
+        paredeVertical(18, 18);
+        paredeVertical(24, 5);
       } else if (fase === 4) {
-        // Museu: salas e galerias.
-        horizontal(7, 2, 29, 5);
-        horizontal(14, 2, 29, 26);
-        horizontal(20, 2, 29, 12);
-        vertical(11, 3, 21, 18);
-        vertical(21, 3, 21, 9);
-        vertical(27, 3, 19, 15);
+        paredeHorizontal(6, 8);
+        paredeHorizontal(13, 23);
+        paredeHorizontal(19, 10);
+        paredeVertical(10, 17);
+        paredeVertical(21, 4);
       } else {
-        // Fase de terror: labirinto mais fechado.
-        horizontal(4, 2, 29, 10);
-        horizontal(8, 2, 29, 25);
-        horizontal(12, 2, 29, 6);
-        horizontal(16, 2, 29, 23);
-        horizontal(20, 2, 29, 12);
-        vertical(7, 2, 21, 18);
-        vertical(14, 2, 21, 5);
-        vertical(21, 2, 21, 15);
-        vertical(27, 2, 21, 10);
+        paredeHorizontal(4, 25);
+        paredeHorizontal(8, 6);
+        paredeHorizontal(12, 25);
+        paredeHorizontal(16, 6);
+        paredeHorizontal(20, 25);
       }
 
-      // Mantém livres o início, a saída e os locais dos itens.
-      const celulasLivres = [
+      const lugaresLivres = [
         [2, 2],
         [29, 21],
         [saida.x, saida.y],
-        ...itens.map((item) => [item.x, item.y])
+        ...itens.map(item => [item.x, item.y])
       ];
 
-      for (const [x, y] of celulasLivres) {
+      for (const [x, y] of lugaresLivres) {
         novo[y][x] = " ";
       }
 
@@ -230,36 +204,37 @@
     }
 
     function atualizarInfo() {
-      const coletados = itens.filter((item) => item.pego).length;
+      const coletados = itens.filter(item => item.pego).length;
       info.textContent =
-        `${nomesFases[parte - 1]} — Itens: ${coletados}/${itens.length}`;
+        `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
     }
 
-    function parede(x, y) {
+    function paredeEm(x, y) {
       const coluna = Math.floor(x / tamanho);
       const linha = Math.floor(y / tamanho);
+
       return !mapa[linha] || mapa[linha][coluna] === "#";
     }
 
     function podeMover(x, y, raio = 9) {
-      return !parede(x - raio, y - raio) &&
-             !parede(x + raio, y - raio) &&
-             !parede(x - raio, y + raio) &&
-             !parede(x + raio, y + raio);
+      return !paredeEm(x - raio, y - raio) &&
+             !paredeEm(x + raio, y - raio) &&
+             !paredeEm(x - raio, y + raio) &&
+             !paredeEm(x + raio, y + raio);
     }
 
     function configurarBotao(id, tecla) {
       const botao = document.getElementById(id);
 
-      botao.addEventListener("pointerdown", (evento) => {
+      botao.addEventListener("pointerdown", evento => {
         evento.preventDefault();
         teclas[tecla] = true;
         botao.setPointerCapture(evento.pointerId);
       });
 
-      function soltar() {
+      const soltar = () => {
         teclas[tecla] = false;
-      }
+      };
 
       botao.addEventListener("pointerup", soltar);
       botao.addEventListener("pointercancel", soltar);
@@ -271,7 +246,7 @@
     configurarBotao("esquerda", "arrowleft");
     configurarBotao("direita", "arrowright");
 
-    window.addEventListener("keydown", (evento) => {
+    window.addEventListener("keydown", evento => {
       const tecla = evento.key.toLowerCase();
       teclas[tecla] = true;
 
@@ -280,7 +255,7 @@
       }
     });
 
-    window.addEventListener("keyup", (evento) => {
+    window.addEventListener("keyup", evento => {
       teclas[evento.key.toLowerCase()] = false;
     });
 
@@ -292,6 +267,71 @@
       if (podeMover(jogador.x, jogador.y + dy)) {
         jogador.y += dy;
       }
+    }
+
+    function acharProximoPasso() {
+      const inicio = {
+        x: Math.floor(renato.x / tamanho),
+        y: Math.floor(renato.y / tamanho)
+      };
+
+      const destino = {
+        x: Math.floor(jogador.x / tamanho),
+        y: Math.floor(jogador.y / tamanho)
+      };
+
+      const chave = ponto => `${ponto.x},${ponto.y}`;
+      const fila = [inicio];
+      const anteriores = new Map();
+
+      anteriores.set(chave(inicio), null);
+
+      const direcoes = [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ];
+
+      for (let i = 0; i < fila.length; i++) {
+        const atual = fila[i];
+
+        if (atual.x === destino.x && atual.y === destino.y) {
+          break;
+        }
+
+        for (const [dx, dy] of direcoes) {
+          const proximo = {
+            x: atual.x + dx,
+            y: atual.y + dy
+          };
+
+          if (
+            mapa[proximo.y]?.[proximo.x] !== " " ||
+            anteriores.has(chave(proximo))
+          ) {
+            continue;
+          }
+
+          anteriores.set(chave(proximo), atual);
+          fila.push(proximo);
+        }
+      }
+
+      if (!anteriores.has(chave(destino))) {
+        return null;
+      }
+
+      let passo = destino;
+
+      while (
+        anteriores.get(chave(passo)) !== null &&
+        chave(anteriores.get(chave(passo))) !== chave(inicio)
+      ) {
+        passo = anteriores.get(chave(passo));
+      }
+
+      return passo;
     }
 
     function tocarSomAssustador() {
@@ -310,113 +350,110 @@
       oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
 
       volume.gain.setValueAtTime(0.001, agora);
-      volume.gain.exponentialRampToValueAtTime(0.3, agora + 0.08);
-      volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.4);
+      volume.gain.exponentialRampToValueAtTime(0.25, agora + 0.08);
+      volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.2);
 
       oscilador.connect(volume);
       volume.connect(audio.destination);
       oscilador.start(agora);
-      oscilador.stop(agora + 1.4);
+      oscilador.stop(agora + 1.2);
 
       oscilador.addEventListener("ended", () => audio.close());
     }
-
-    function acharProximoPasso() {
-      const inicio = {
-        x: Math.floor(renato.x / tamanho),
-        y: Math.floor(renato.y / tamanho)
-      };
-
-      const destino = {
-        x: Math.floor(jogador.x / tamanho),
-        y: Math.floor(jogador.y / tamanho)
-      };
-
-      const chave = (p) => `${p.x},${p.y}`;
-      const fila = [inicio];
-      const anteriores = new Map();
-      anteriores.set(chave(inicio), null);
-
-      const direcoes = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-      for (let i = 0; i < fila.length; i++) {
-        const atual = fila[i];
-
-        if (atual.x === destino.x && atual.y === destino.y) break;
-
-        for (const [dx, dy] of direcoes) {
-          const proximo = { x: atual.x + dx, y: atual.y + dy };
-
-          if (
-            mapa[proximo.y]?.[proximo.x] !== " " ||
-            anteriores.has(chave(proximo))
-          ) {
-            continue;
-          }
-
-          anteriores.set(chave(proximo), atual);
-          fila.push(proximo);
-        }
-      }
-
-      if (!anteriores.has(chave(destino))) return null;
-
-      let passo = destino;
-
-      while (
-        anteriores.get(chave(passo)) !== null &&
-        chave(anteriores.get(chave(passo))) !== chave(inicio)
-      ) {
-        passo = anteriores.get(chave(passo));
-      }
-
-      return passo;
-    }
-
     function desenhar() {
       const tema = temas[parte - 1];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Desenha o mapa da fase atual.
+      // Desenha o chão e as paredes do labirinto.
       for (let y = 0; y < linhas; y++) {
         for (let x = 0; x < colunas; x++) {
+          const px = x * tamanho;
+          const py = y * tamanho;
+
           ctx.fillStyle = mapa[y][x] === "#" ? tema.parede : tema.chao;
-          ctx.fillRect(x * tamanho, y * tamanho, tamanho, tamanho);
+          ctx.fillRect(px, py, tamanho, tamanho);
 
           if (mapa[y][x] === "#") {
             ctx.strokeStyle = tema.detalhe;
-            ctx.strokeRect(x * tamanho, y * tamanho, tamanho, tamanho);
+            ctx.strokeRect(px, py, tamanho, tamanho);
           }
         }
       }
 
-      // Enfeites diferentes para cada cenário.
-      ctx.textAlign = "center";
-      ctx.font = "18px Arial";
-
+      // Decoração visual dos cenários.
       if (parte === 2) {
-        ctx.fillStyle = "#b8f1ff";
-        ctx.fillText("✚", 175, 160);
-        ctx.fillText("✚", 575, 360);
-        ctx.fillText("✚", 375, 510);
-      } else if (parte === 3) {
-        ctx.fillStyle = "#d7d7e0";
-        ctx.fillText("▥", 175, 160);
-        ctx.fillText("▥", 575, 360);
-        ctx.fillText("▥", 375, 510);
-      } else if (parte === 4) {
-        ctx.fillStyle = "#ffe08a";
-        ctx.fillText("🖼️", 175, 160);
-        ctx.fillText("🖼️", 575, 360);
-        ctx.fillText("🖼️", 375, 510);
-      } else if (parte === 5) {
-        ctx.fillStyle = "#ff617c";
-        ctx.fillText("☠", 175, 160);
-        ctx.fillText("☠", 575, 360);
-        ctx.fillText("☠", 375, 510);
-      }
+        // Hospital: camas, travesseiros e cruzes.
+        for (const [x, y] of [[3, 3], [14, 8], [23, 15]]) {
+          const px = x * tamanho;
+          const py = y * tamanho;
 
-      ctx.textAlign = "left";
+          ctx.fillStyle = "#d8edf0";
+          ctx.fillRect(px, py, 58, 27);
+
+          ctx.fillStyle = "#86b6bf";
+          ctx.fillRect(px + 5, py + 5, 17, 16);
+
+          ctx.fillStyle = "#46616b";
+          ctx.fillRect(px + 2, py + 26, 5, 5);
+          ctx.fillRect(px + 51, py + 26, 5, 5);
+
+          ctx.fillStyle = "#ff6666";
+          ctx.fillRect(px + 38, py + 6, 5, 15);
+          ctx.fillRect(px + 33, py + 11, 15, 5);
+        }
+      } else if (parte === 3) {
+        // Presídio: fileiras de grades.
+        for (const [x, y] of [[3, 3], [12, 8], [21, 14], [4, 18]]) {
+          const px = x * tamanho;
+          const py = y * tamanho;
+
+          ctx.fillStyle = "#b9bbc4";
+          ctx.fillRect(px, py, 55, 4);
+          ctx.fillRect(px, py + 36, 55, 4);
+
+          for (let i = 0; i < 6; i++) {
+            ctx.fillRect(px + i * 10, py, 4, 40);
+          }
+        }
+      } else if (parte === 4) {
+        // Museu: quadros em molduras douradas.
+        const quadros = [
+          [3, 3, "#4d9c84"],
+          [13, 8, "#bf7459"],
+          [23, 15, "#6688c4"]
+        ];
+
+        for (const [x, y, cor] of quadros) {
+          const px = x * tamanho;
+          const py = y * tamanho;
+
+          ctx.fillStyle = "#e0bd67";
+          ctx.fillRect(px, py, 55, 43);
+
+          ctx.fillStyle = "#493c2b";
+          ctx.fillRect(px + 5, py + 5, 45, 33);
+
+          ctx.fillStyle = cor;
+          ctx.fillRect(px + 10, py + 10, 35, 23);
+
+          ctx.fillStyle = "#f0d99c";
+          ctx.beginPath();
+          ctx.arc(px + 27, py + 21, 7, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else if (parte === 5) {
+        // Terror: iluminação avermelhada e caveiras.
+        ctx.fillStyle = "rgba(150, 0, 35, 0.18)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = "32px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ff617c";
+        ctx.fillText("☠", 100, 150);
+        ctx.fillText("☠", 400, 350);
+        ctx.fillText("☠", 700, 500);
+        ctx.textAlign = "left";
+      }
 
       // Saída.
       ctx.fillStyle = "#38b764";
@@ -426,11 +463,12 @@
         tamanho,
         tamanho
       );
+
       ctx.fillStyle = "white";
       ctx.font = "11px Arial";
       ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
 
-      // Itens não coletados.
+      // Itens que ainda não foram coletados.
       for (const item of itens) {
         if (!item.pego) {
           ctx.font = "20px Arial";
@@ -464,14 +502,14 @@
       ctx.font = "12px Arial";
       ctx.fillText("Renato", renato.x - 19, renato.y - 17);
 
-      // Yarlei aparece discretamente no cenário de terror, se a imagem existir.
+      // Mostra Yarlei no cenário de terror se yarlei.jpg estiver na mesma pasta.
       if (parte === 5 && fotoYarlei.complete && fotoYarlei.naturalWidth > 0) {
         ctx.globalAlpha = 0.22;
         ctx.drawImage(fotoYarlei, 360, 250, 80, 95);
         ctx.globalAlpha = 1;
       }
 
-      // Tela de vitória ou derrota.
+      // Mensagem de vitória ou derrota.
       if (acabou) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -479,19 +517,12 @@
         ctx.textAlign = "center";
         ctx.fillStyle = "white";
         ctx.font = "bold 25px Arial";
-        ctx.fillText(
-          mensagem.textContent,
-          canvas.width / 2,
-          canvas.height / 2
-        );
+        ctx.fillText(mensagem.textContent, canvas.width / 2, canvas.height / 2);
         ctx.textAlign = "left";
       }
 
       atualizarInfo();
     }
-    let tempoEstado = 0;
-    let pausaRenato = false;
-
     function reiniciarPosicoes() {
       jogador.x = 2.5 * tamanho;
       jogador.y = 2.5 * tamanho;
@@ -510,7 +541,7 @@
       mapa = criarMapa(parte);
       reiniciarPosicoes();
 
-      itens.forEach((item) => {
+      itens.forEach(item => {
         item.pego = false;
       });
 
@@ -530,15 +561,12 @@
         itens[2].emoji = "🖼️";
       }
 
-      // Renato fica mais rápido em cada fase; na última, não descansa.
-      renato.velocidade = [0, 155, 190, 225, 260, 330][parte];
+      renato.velocidade = [0, 150, 175, 200, 230, 270][parte];
       tempoEstado = 0;
       pausaRenato = false;
 
       mensagem.textContent =
-        parte === 3
-          ? "Presídio: encontre as três chaves e escape!"
-          : `${nomesFases[parte - 1]}: pegue os itens e encontre a saída!`;
+        `${nomesFases[parte - 1]}: pegue os três itens e vá até a saída!`;
 
       atualizarInfo();
     }
@@ -546,6 +574,7 @@
     function reiniciarJogo() {
       parte = 1;
       acabou = false;
+      bloqueioSaida = false;
       mapa = criarMapa(parte);
       reiniciarPosicoes();
 
@@ -556,15 +585,14 @@
       itens[2].nome = "Pintura";
       itens[2].emoji = "🖼️";
 
-      itens.forEach((item) => {
+      itens.forEach(item => {
         item.pego = false;
       });
 
-      renato.velocidade = 155;
+      renato.velocidade = 150;
       tempoEstado = 0;
       pausaRenato = false;
-      mensagem.textContent =
-        "Pegue os três itens e encontre a saída verde!";
+      mensagem.textContent = "Pegue os três itens e encontre a saída verde!";
       atualizarInfo();
     }
 
@@ -581,11 +609,11 @@
         if (teclas.arrowleft || teclas.a) dx--;
         if (teclas.arrowright || teclas.d) dx++;
 
-        if (dx || dy) {
+        if (dx !== 0 || dy !== 0) {
           const distancia = Math.hypot(dx, dy);
           moverJogador(
-            (dx / distancia) * jogador.velocidade * dt,
-            (dy / distancia) * jogador.velocidade * dt
+            dx / distancia * jogador.velocidade * dt,
+            dy / distancia * jogador.velocidade * dt
           );
         }
 
@@ -599,10 +627,11 @@
           if (Math.hypot(jogador.x - itemX, jogador.y - itemY) < 20) {
             item.pego = true;
             mensagem.textContent = `Você pegou: ${item.nome}!`;
+            atualizarInfo();
           }
         }
 
-        // Renato descansa nas fases 1 a 4. Na fase 5, persegue sem parar.
+        // Renato descansa brevemente nas fases 1 a 4.
         if (parte < 5) {
           tempoEstado += dt;
 
@@ -610,7 +639,7 @@
             pausaRenato = true;
             tempoEstado = 0;
             mensagem.textContent = "Renato está descansando. Aproveite!";
-          } else if (pausaRenato && tempoEstado >= 8) {
+          } else if (pausaRenato && tempoEstado >= 6) {
             pausaRenato = false;
             tempoEstado = 0;
             mensagem.textContent = "Renato voltou a perseguir você!";
@@ -619,7 +648,7 @@
           pausaRenato = false;
         }
 
-        // Renato persegue o jogador usando o caminho do labirinto.
+        // Renato encontra o caminho pelo labirinto até o jogador.
         if (!pausaRenato) {
           const passo = acharProximoPasso();
 
@@ -632,42 +661,43 @@
 
             if (distancia > 1) {
               const movimento = Math.min(renato.velocidade * dt, distancia);
-              const movimentoX = (difX / distancia) * movimento;
-              const movimentoY = (difY / distancia) * movimento;
+              const movX = difX / distancia * movimento;
+              const movY = difY / distancia * movimento;
 
-              if (podeMover(renato.x + movimentoX, renato.y, 10)) {
-                renato.x += movimentoX;
+              if (podeMover(renato.x + movX, renato.y, 10)) {
+                renato.x += movX;
               }
-              if (podeMover(renato.x, renato.y + movimentoY, 10)) {
-                renato.y += movimentoY;
+
+              if (podeMover(renato.x, renato.y + movY, 10)) {
+                renato.y += movY;
               }
             }
           }
 
           if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
             acabou = true;
-            mensagem.textContent =
-              "Renato pegou você! Toque em Recomeçar do início.";
+            mensagem.textContent = "Renato pegou você! Recomece para tentar de novo.";
             tocarSomAssustador();
           }
         }
 
-        // A saída só abre quando os três itens foram encontrados.
-        const todosItensPegos = itens.every((item) => item.pego);
+        // Só permite sair depois de pegar os três itens.
+        const todosPegos = itens.every(item => item.pego);
         const saidaX = saida.x * tamanho + tamanho / 2;
         const saidaY = saida.y * tamanho + tamanho / 2;
         const pertoDaSaida =
           Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20;
 
-        if (!acabou && pertoDaSaida && !contadorSaida) {
-          if (todosItensPegos) {
-            contadorSaida = true;
+        if (!acabou && pertoDaSaida && !bloqueioSaida) {
+          if (todosPegos) {
+            bloqueioSaida = true;
             iniciarProximaFase();
+
             setTimeout(() => {
-              contadorSaida = false;
+              bloqueioSaida = false;
             }, 500);
           } else {
-            mensagem.textContent = "A saída está trancada! Encontre os itens.";
+            mensagem.textContent = "A saída está trancada! Encontre os três itens.";
           }
         }
       }
