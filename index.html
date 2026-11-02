@@ -5,70 +5,77 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fuja do louco!</title>
+  
+<style>
+  body {
+    margin: 0;
+    padding: 12px;
+    background: #08090d;
+    color: #d5d7df;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
 
-  <style>
-    body {
-      margin: 0;
-      padding: 12px;
-      background: #00bcd4;
-      color: #062f38;
-      font-family: Arial, sans-serif;
-      text-align: center;
-    }
+  h1 {
+    color: #e6d9d9;
+    text-shadow: 0 0 12px #8f263d;
+  }
 
-    h1 { color: #063b48; }
+  canvas {
+    display: block;
+    width: min(800px, 96vw);
+    height: auto;
+    margin: 12px auto;
+    border: 3px solid #542431;
+    background: #100f14;
+    box-shadow: 0 0 24px #000, 0 0 12px #6b2535;
+    touch-action: none;
+  }
 
-    canvas {
-      display: block;
-      width: min(800px, 96vw);
-      height: auto;
-      margin: 12px auto;
-      border: 3px solid #087f8c;
-      background: #211d22;
-      touch-action: none;
-    }
+  #mensagem {
+    min-height: 24px;
+    color: #f0c7cf;
+    font-weight: bold;
+    text-shadow: 0 0 8px #9f243f;
+  }
 
-    #mensagem {
-      min-height: 24px;
-      color: #062f38;
-      font-weight: bold;
-    }
+  #controles {
+    display: grid;
+    grid-template: 56px 56px / 64px 64px 64px;
+    gap: 6px;
+    justify-content: center;
+    margin: 14px auto;
+  }
 
-    #controles {
-      display: grid;
-      grid-template: 56px 56px / 64px 64px 64px;
-      gap: 6px;
-      justify-content: center;
-      margin: 14px auto;
-    }
+  button {
+    border: 2px solid #542431;
+    border-radius: 12px;
+    background: #24151b;
+    color: white;
+    user-select: none;
+    touch-action: none;
+  }
 
-    button {
-      border: 2px solid #087f8c;
-      border-radius: 12px;
-      background: #075866;
-      color: white;
-      user-select: none;
-      touch-action: none;
-    }
+  #controles button { font-size: 26px; }
 
-    #controles button { font-size: 26px; }
+  #cima { grid-area: 1 / 2; }
+  #esquerda { grid-area: 2 / 1; }
+  #baixo { grid-area: 2 / 2; }
+  #direita { grid-area: 2 / 3; }
 
-    #cima { grid-area: 1 / 2; }
-    #esquerda { grid-area: 2 / 1; }
-    #baixo { grid-area: 2 / 2; }
-    #direita { grid-area: 2 / 3; }
-
-    #reiniciar, #musica {
-      padding: 10px 18px;
-      font-size: 16px;
-      touch-action: auto;
+  #reiniciar, #musica {
+    padding: 10px 18px;
+    font-size: 16px;
+    touch-action: auto;
+  }
+</style>
     }
   </style>
 </head>
 <body>
   <h1>Fuja do louco!</h1>
   <div id="info"></div>
-  <div id="mensagem">Seja mais esperto do que o Renato! Boa sorte 🫡</div>
+  <div id="mensagem">fuja do namorado do Adriano o Renato! Boa sorte 🫡</div>
 
   <canvas id="jogo" width="800" height="600"></canvas>
 
@@ -85,16 +92,18 @@
   <script>
     "use strict";
 
+    // ELEMENTOS DA PÁGINA
     const canvas = document.getElementById("jogo");
     const ctx = canvas.getContext("2d");
     const info = document.getElementById("info");
     const mensagem = document.getElementById("mensagem");
 
+    // CONFIGURAÇÕES DO JOGO
     const tamanho = 25;
     const colunas = 32;
     const linhas = 24;
     const teclas = Object.create(null);
-
+    const velocidadeNormal = 180;
     const avisoInicial = "Seja mais esperto do que o Renato! Boa sorte 🫡";
 
     const nomesFases = [
@@ -106,25 +115,14 @@
     ];
 
     const temas = [
-      { chao: "#29252b", parede: "#514454", detalhe: "#75657a" },
+      { chao: "#29252b", parede: "#514454", i: "#75657a" },
       { chao: "#26343a", parede: "#46616b", detalhe: "#9bcbd3" },
       { chao: "#292a32", parede: "#555565", detalhe: "#9999aa" },
       { chao: "#383124", parede: "#77613c", detalhe: "#d6bd7b" },
       { chao: "#21151d", parede: "#552b3b", detalhe: "#b75b75" }
     ];
 
-    let parte = 1;
-    let mapa = [];
-    let acabou = false;
-    let pausaRenato = false;
-    let tempoEstado = 0;
-    let ultimoTempo = performance.now();
-    let bloqueioSaida = false;
-
-    const jogador = { x: 62.5, y: 62.5, velocidade: 180 };
-    const velocidadeNormal = 180;
-    let bonusAte = 0;
-
+    const jogador = { x: 62.5, y: 62.5, velocidade: velocidadeNormal };
     const renato = { x: 737.5, y: 537.5, velocidade: 150 };
     const saida = { x: 29, y: 2 };
 
@@ -141,17 +139,67 @@
       pego: false
     };
 
-    const passagemEstreita = {
-      RenatoEstaPassando: false,
-      tempoRestante: 0
-    };
+    let parte = 1;
+    let mapa = [];
+    let acabou = false;
+    let pausaRenato = false;
+    let tempoEstado = 0;
+    let ultimoTempo = performance.now();
+    let bonusAte = 0;
 
-    let RenatoJaPausou = false;
-    let musicaAtiva = false;
-    let contextoMusical = null;
-    let temporizadorMusical = null;
     let notaMusical = 0;
+let musicaAtiva = false;
+let contextoMusical = null;
+let temporizadorMusical = null;
+// Som grave que toca enquanto Renato está perseguindo
+let audioPerseguicao = null;
+let osciladorPerseguicao = null;
+let volumePerseguicao = null;
+let somPerseguicaoLigado = false;
 
+function prepararSomPerseguicao() {
+  if (audioPerseguicao) {
+    audioPerseguicao.resume();
+    return;
+  }
+
+  const AudioClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioClass) return;
+
+  audioPerseguicao = new AudioClass();
+  osciladorPerseguicao = audioPerseguicao.createOscillator();
+  volumePerseguicao = audioPerseguicao.createGain();
+
+  osciladorPerseguicao.type = "triangle";
+  osciladorPerseguicao.frequency.value = 48;
+  volumePerseguicao.gain.value = 0;
+
+  osciladorPerseguicao.connect(volumePerseguicao);
+  volumePerseguicao.connect(audioPerseguicao.destination);
+  osciladorPerseguicao.start();
+}
+
+function controlarSomPerseguicao(ligado) {
+  if (!audioPerseguicao || !volumePerseguicao) return;
+
+  audioPerseguicao.resume();
+
+  const agora = audioPerseguicao.currentTime;
+  const volume = ligado ? 0.045 : 0;
+
+  volumePerseguicao.gain.cancelScheduledValues(agora);
+  volumePerseguicao.gain.setTargetAtTime(volume, agora, 0.25);
+  somPerseguicaoLigado = ligado;
+}
+
+// O navegador libera o áudio depois do primeiro toque ou tecla
+window.addEventListener("pointerdown", prepararSomPerseguicao, { once: true });
+window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
+    let RenatoJaPausou = false;
+    let RenatoEstaPreso = false;
+    let tempoPreso = 0;
+
+    // CRIA O LABIRINTO DA FASE
     function criarMapa(fase) {
       const novo = Array.from({ length: linhas }, (_, y) =>
         Array.from({ length: colunas }, (_, x) =>
@@ -202,7 +250,7 @@
         paredeHorizontal(20, 25);
       }
 
-      const lugaresLivres = [
+      const casasLivres = [
         [2, 2],
         [29, 21],
         [saida.x, saida.y],
@@ -210,13 +258,165 @@
         [bonusVelocidade.x, bonusVelocidade.y]
       ];
 
-      for (const [x, y] of lugaresLivres) {
+      for (const [x, y] of casasLivres) {
         novo[y][x] = " ";
       }
 
       return novo;
     }
+    // ATUALIZA AS INFORMAÇÕES DA FASE
+    function atualizarInfo() {
+      const coletados = itens.filter(item => item.pego).length;
+      info.textContent = `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
+    }
 
+    // VERIFICA PAREDES E MOVIMENTAÇÃO
+    function paredeEm(x, y) {
+      const coluna = Math.floor(x / tamanho);
+      const linha = Math.floor(y / tamanho);
+      return !mapa[linha] || mapa[linha][coluna] === "#";
+    }
+
+    function podeMover(x, y, raio = 9) {
+      return !paredeEm(x - raio, y - raio) &&
+        !paredeEm(x + raio, y - raio) &&
+        !paredeEm(x - raio, y + raio) &&
+        !paredeEm(x + raio, y + raio);
+    }
+
+    function moverJogador(dx, dy) {
+      if (podeMover(jogador.x + dx, jogador.y)) {
+        jogador.x += dx;
+      }
+
+      if (podeMover(jogador.x, jogador.y + dy)) {
+        jogador.y += dy;
+      }
+    }
+
+    // CONTROLES DO TECLADO E DOS BOTÕES NA TELA
+    function configurarBotao(id, tecla) {
+      const botao = document.getElementById(id);
+
+      botao.addEventListener("pointerdown", evento => {
+        evento.preventDefault();
+        teclas[tecla] = true;
+        botao.setPointerCapture(evento.pointerId);
+      });
+
+      const soltar = () => {
+        teclas[tecla] = false;
+      };
+
+      botao.addEventListener("pointerup", soltar);
+      botao.addEventListener("pointercancel", soltar);
+      botao.addEventListener("lostpointercapture", soltar);
+    }
+
+    configurarBotao("cima", "arrowup");
+    configurarBotao("baixo", "arrowdown");
+    configurarBotao("esquerda", "arrowleft");
+    configurarBotao("direita", "arrowright");
+
+    window.addEventListener("keydown", evento => {
+      const tecla = evento.key.toLowerCase();
+      teclas[tecla] = true;
+
+      if (tecla.startsWith("arrow") || tecla === " ") {
+        evento.preventDefault();
+      }
+    });
+
+    window.addEventListener("keyup", evento => {
+      teclas[evento.key.toLowerCase()] = false;
+    });
+
+    // ENCONTRA O CAMINHO DO RENATO ATÉ O JOGADOR
+    function acharProximoPasso() {
+      const inicio = {
+        x: Math.floor(renato.x / tamanho),
+        y: Math.floor(renato.y / tamanho)
+      };
+
+      const destino = {
+        x: Math.floor(jogador.x / tamanho),
+        y: Math.floor(jogador.y / tamanho)
+      };
+
+      const chave = ponto => `${ponto.x},${ponto.y}`;
+      const fila = [inicio];
+      const anteriores = new Map();
+      anteriores.set(chave(inicio), null);
+
+      const direcoes = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+      for (let i = 0; i < fila.length; i++) {
+        const atual = fila[i];
+
+        if (atual.x === destino.x && atual.y === destino.y) {
+          break;
+        }
+
+        for (const [dx, dy] of direcoes) {
+          const proximo = { x: atual.x + dx, y: atual.y + dy };
+
+          if (
+            mapa[proximo.y]?.[proximo.x] !== " " ||
+            anteriores.has(chave(proximo))
+          ) {
+            continue;
+          }
+
+          anteriores.set(chave(proximo), atual);
+          fila.push(proximo);
+        }
+      }
+
+      if (!anteriores.has(chave(destino))) {
+        return null;
+      }
+
+      let passo = destino;
+
+      while (
+        anteriores.get(chave(passo)) !== null &&
+        chave(anteriores.get(chave(passo))) !== chave(inicio)
+      ) {
+        passo = anteriores.get(chave(passo));
+      }
+
+      return passo;
+    }
+
+    // TOCA UM EFEITO SONORO QUANDO O RENATO PEGA O JOGADOR
+    function tocarSomAssustador() {
+      const AudioContextClass =
+        window.AudioContext || window.webkitAudioContext;
+
+      if (!AudioContextClass) return;
+
+      const audio = new AudioContextClass();
+      const agora = audio.currentTime;
+      const oscilador = audio.createOscillator();
+      const volume = audio.createGain();
+
+      oscilador.type = "sawtooth";
+      oscilador.frequency.setValueAtTime(180, agora);
+      oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
+
+      volume.gain.setValueAtTime(0.001, agora);
+      volume.gain.exponentialRampToValueAtTime(0.18, agora + 0.08);
+      volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.2);
+
+      oscilador.connect(volume);
+      volume.connect(audio.destination);
+      oscilador.start(agora);
+      oscilador.stop(agora + 1.2);
+
+      oscilador.addEventListener("ended", () => audio.close());
+    }
+
+    // MÚSICA SIMPLES DO JOGO
     function tocarNotaSuave(frequencia, inicio, duracao, volume) {
       const oscilador = contextoMusical.createOscillator();
       const ganho = contextoMusical.createGain();
@@ -279,150 +479,7 @@
       if (musicaAtiva) pararMusica();
       else iniciarMusica();
     });
-
-    function atualizarInfo() {
-      const coletados = itens.filter(item => item.pego).length;
-      info.textContent = `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
-    }
-
-    function paredeEm(x, y) {
-      const coluna = Math.floor(x / tamanho);
-      const linha = Math.floor(y / tamanho);
-      return !mapa[linha] || mapa[linha][coluna] === "#";
-    }
-
-    function podeMover(x, y, raio = 9) {
-      return !paredeEm(x - raio, y - raio) &&
-        !paredeEm(x + raio, y - raio) &&
-        !paredeEm(x - raio, y + raio) &&
-        !paredeEm(x + raio, y + raio);
-    }
-
-    function configurarBotao(id, tecla) {
-      const botao = document.getElementById(id);
-
-      botao.addEventListener("pointerdown", evento => {
-        evento.preventDefault();
-        teclas[tecla] = true;
-        botao.setPointerCapture(evento.pointerId);
-      });
-
-      const soltar = () => {
-        teclas[tecla] = false;
-      };
-
-      botao.addEventListener("pointerup", soltar);
-      botao.addEventListener("pointercancel", soltar);
-      botao.addEventListener("lostpointercapture", soltar);
-    }
-
-    configurarBotao("cima", "arrowup");
-    configurarBotao("baixo", "arrowdown");
-    configurarBotao("esquerda", "arrowleft");
-    configurarBotao("direita", "arrowright");
-
-    window.addEventListener("keydown", evento => {
-      const tecla = evento.key.toLowerCase();
-      teclas[tecla] = true;
-
-      if (tecla.startsWith("arrow") || tecla === " ") {
-        evento.preventDefault();
-      }
-    });
-
-    window.addEventListener("keyup", evento => {
-      teclas[evento.key.toLowerCase()] = false;
-    });
-
-    function moverJogador(dx, dy) {
-      if (podeMover(jogador.x + dx, jogador.y)) {
-        jogador.x += dx;
-      }
-
-      if (podeMover(jogador.x, jogador.y + dy)) {
-        jogador.y += dy;
-      }
-    }
-
-    function acharProximoPasso() {
-      const inicio = {
-        x: Math.floor(renato.x / tamanho),
-        y: Math.floor(renato.y / tamanho)
-      };
-
-      const destino = {
-        x: Math.floor(jogador.x / tamanho),
-        y: Math.floor(jogador.y / tamanho)
-      };
-
-      const chave = ponto => `${ponto.x},${ponto.y}`;
-      const fila = [inicio];
-      const anteriores = new Map();
-      anteriores.set(chave(inicio), null);
-
-      const direcoes = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-
-      for (let i = 0; i < fila.length; i++) {
-        const atual = fila[i];
-
-        if (atual.x === destino.x && atual.y === destino.y) break;
-
-        for (const [dx, dy] of direcoes) {
-          const proximo = { x: atual.x + dx, y: atual.y + dy };
-
-          if (
-            mapa[proximo.y]?.[proximo.x] !== " " ||
-            anteriores.has(chave(proximo))
-          ) {
-            continue;
-          }
-
-          anteriores.set(chave(proximo), atual);
-          fila.push(proximo);
-        }
-      }
-
-      if (!anteriores.has(chave(destino))) return null;
-
-      let passo = destino;
-
-      while (
-        anteriores.get(chave(passo)) !== null &&
-        chave(anteriores.get(chave(passo))) !== chave(inicio)
-      ) {
-        passo = anteriores.get(chave(passo));
-      }
-
-      return passo;
-    }
-
-    function tocarSomAssustador() {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
-
-      if (!AudioContextClass) return;
-
-      const audio = new AudioContextClass();
-      const agora = audio.currentTime;
-      const oscilador = audio.createOscillator();
-      const volume = audio.createGain();
-
-      oscilador.type = "sawtooth";
-      oscilador.frequency.setValueAtTime(180, agora);
-      oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
-
-      volume.gain.setValueAtTime(0.001, agora);
-      volume.gain.exponentialRampToValueAtTime(0.18, agora + 0.08);
-      volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.2);
-
-      oscilador.connect(volume);
-      volume.connect(audio.destination);
-      oscilador.start(agora);
-      oscilador.stop(agora + 1.2);
-
-      oscilador.addEventListener("ended", () => audio.close());
-    }
-
+    // DESENHA O JOGO NA TELA
     function desenhar() {
       const tema = temas[parte - 1];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -442,12 +499,14 @@
         }
       }
 
+      // Saída
       ctx.fillStyle = "#38b764";
       ctx.fillRect(saida.x * tamanho, saida.y * tamanho, tamanho, tamanho);
       ctx.fillStyle = "white";
       ctx.font = "11px Arial";
       ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
 
+      // Itens
       for (const item of itens) {
         if (!item.pego) {
           ctx.font = "20px Arial";
@@ -455,6 +514,7 @@
         }
       }
 
+      // Bônus de velocidade nas fases 1 e 5, depois de pegar os itens
       const faseComBonus = parte === 1 || parte === 5;
       const todosItensPegos = itens.every(item => item.pego);
 
@@ -471,11 +531,13 @@
         );
       }
 
+      // Jogador
       ctx.fillStyle = "#79d8ff";
       ctx.beginPath();
       ctx.arc(jogador.x, jogador.y, 10, 0, Math.PI * 2);
       ctx.fill();
 
+      // Renato
       ctx.fillStyle = parte === 5 ? "#ff1744" : "#bd334b";
       ctx.beginPath();
       ctx.arc(renato.x, renato.y, parte === 5 ? 14 : 12, 0, Math.PI * 2);
@@ -485,6 +547,38 @@
       ctx.font = "12px Arial";
       ctx.fillText("Renato", renato.x - 19, renato.y - 17);
 
+        controlarSomPerseguicao(
+          !pausaRenato && !RenatoEstaPreso && !acabou
+        );
+      // Escuridão com luz suave ao redor do jogador
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const luz = ctx.createRadialGradient(
+        jogador.x, jogador.y, 25,
+        jogador.x, jogador.y, 190
+      );
+      luz.addColorStop(0, "rgba(255, 225, 170, 0.28)");
+      luz.addColorStop(0.55, "rgba(255, 220, 160, 0.10)");
+      luz.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+      ctx.globalCompositeOperation = "lighter";
+      ctx.fillStyle = luz;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+
+      // Olhos vermelhos brilhantes do Renato
+      ctx.save();
+      ctx.shadowColor = "#ff001e";
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = "#ff253f";
+      ctx.beginPath();
+      ctx.arc(renato.x - 5, renato.y - 2, 2.5, 0, Math.PI * 2);
+      ctx.arc(renato.x + 5, renato.y - 2, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      // Tela de vitória ou fim de jogo
       if (acabou) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -499,12 +593,56 @@
       atualizarInfo();
     }
 
+    // REPOSICIONA O JOGADOR E O RENATO
     function reiniciarPosicoes() {
       jogador.x = 2.5 * tamanho;
       jogador.y = 2.5 * tamanho;
       renato.x = 29.5 * tamanho;
       renato.y = 21.5 * tamanho;
     }
+
+    // PREPARA OS ITENS CERTOS PARA A FASE
+    function configurarItensDaFase() {
+      itens.forEach(item => {
+        item.pego = false;
+      });
+
+      itens[0].nome = parte === 3 ? "Chave principal" : "Diamante";
+      itens[0].emoji = parte === 3 ? "🗝️" : "💎";
+
+      itens[1].nome = parte === 3 ? "Chave da cela" : "Moeda";
+      itens[1].emoji = parte === 3 ? "🔑" : "🪙";
+
+      itens[2].nome =
+        parte === 3 ? "Chave da saída" :
+        parte === 4 ? "Obra de arte" : "Pintura";
+      itens[2].emoji = parte === 3 ? "🔑" : "💵";
+    }
+
+    // RECOMEÇA A MESMA FASE DEPOIS QUE O RENATO PEGA O JOGADOR
+    function reiniciarFaseAtual() {
+      acabou = false;
+      mapa = criarMapa(parte);
+      reiniciarPosicoes();
+      configurarItensDaFase();
+
+      bonusVelocidade.apareceu = false;
+      bonusVelocidade.pego = false;
+      jogador.velocidade = velocidadeNormal;
+      bonusAte = 0;
+
+      pausaRenato = false;
+      tempoEstado = 0;
+      RenatoJaPausou = false;
+      RenatoEstaPreso = false;
+      tempoPreso = 0;
+
+      mensagem.textContent =
+        `Você foi pego! Tente de novo na fase ${parte}.`;
+      atualizarInfo();
+    }
+
+    // AVANÇA PARA A PRÓXIMA FASE
     function iniciarProximaFase() {
       if (parte >= 5) {
         acabou = true;
@@ -515,19 +653,7 @@
       parte++;
       mapa = criarMapa(parte);
       reiniciarPosicoes();
-
-      itens.forEach(item => {
-        item.pego = false;
-      });
-
-      itens[0].nome = parte === 3 ? "Chave principal" : "Diamante";
-      itens[0].emoji = parte === 3 ? "🗝️" : "💎";
-      itens[1].nome = parte === 3 ? "Chave da cela" : "Moeda";
-      itens[1].emoji = parte === 3 ? "🔑" : "🪙";
-      itens[2].nome = parte === 3
-        ? "Chave da saída"
-        : parte === 4 ? "Obra de arte" : "Pintura";
-      itens[2].emoji = parte === 3 ? "🔑" : "🖼️";
+      configurarItensDaFase();
 
       bonusVelocidade.apareceu = false;
       bonusVelocidade.pego = false;
@@ -535,35 +661,23 @@
       bonusAte = 0;
 
       renato.velocidade = [0, 150, 175, 200, 230, 270][parte];
-      tempoEstado = 0;
       pausaRenato = false;
-      passagemEstreita.RenatoEstaPassando = false;
-      passagemEstreita.tempoRestante = 0;
+      tempoEstado = 0;
       RenatoJaPausou = false;
+      RenatoEstaPreso = false;
+      tempoPreso = 0;
 
       mensagem.textContent =
         `${nomesFases[parte - 1]}: pegue os três itens e vá até a saída!`;
-
       atualizarInfo();
     }
-
+    // RECOMEÇA O JOGO INTEIRO NA FASE 1
     function reiniciarJogo() {
       parte = 1;
       acabou = false;
-      bloqueioSaida = false;
       mapa = criarMapa(parte);
       reiniciarPosicoes();
-
-      itens[0].nome = "Diamante";
-      itens[0].emoji = "💎";
-      itens[1].nome = "Moeda";
-      itens[1].emoji = "🪙";
-      itens[2].nome = "Pintura";
-      itens[2].emoji = "🖼️";
-
-      itens.forEach(item => {
-        item.pego = false;
-      });
+      configurarItensDaFase();
 
       bonusVelocidade.apareceu = false;
       bonusVelocidade.pego = false;
@@ -571,28 +685,25 @@
       bonusAte = 0;
 
       renato.velocidade = 150;
-      tempoEstado = 0;
       pausaRenato = false;
-      passagemEstreita.RenatoEstaPassando = false;
-      passagemEstreita.tempoRestante = 0;
+      tempoEstado = 0;
       RenatoJaPausou = false;
+      RenatoEstaPreso = false;
+      tempoPreso = 0;
 
       mensagem.textContent = avisoInicial;
       atualizarInfo();
-
-      setTimeout(() => {
-        if (!acabou && parte === 1 && mensagem.textContent === avisoInicial) {
-          mensagem.textContent =
-            "Pegue os três itens e encontre a saída verde!";
-        }
-      }, 4000);
     }
 
+    document.getElementById("reiniciar").addEventListener("click", reiniciarJogo);
+
+    // ATUALIZA A PARTIDA
     function atualizar(tempoAtual) {
       const dt = Math.min((tempoAtual - ultimoTempo) / 1000, 0.05);
       ultimoTempo = tempoAtual;
 
       if (!acabou) {
+        // Movimento do jogador
         let dx = 0;
         let dy = 0;
 
@@ -609,6 +720,7 @@
           );
         }
 
+        // Coleta dos itens
         for (const item of itens) {
           if (item.pego) continue;
 
@@ -622,6 +734,7 @@
           }
         }
 
+        // Bônus de velocidade nas fases 1 e 5
         const faseComBonus = parte === 1 || parte === 5;
         const todosItensPegos = itens.every(item => item.pego);
 
@@ -646,23 +759,29 @@
           bonusAte = 0;
         }
 
+        // Renato descansa depois de 20 segundos por 10 segundos
         if (parte < 5) {
           tempoEstado += dt;
 
           if (!pausaRenato && tempoEstado >= 20) {
             pausaRenato = true;
             tempoEstado = 0;
-            mensagem.textContent = "Renato está descansando. Aproveite!";
-          } else if (pausaRenato && tempoEstado >= 6) {
-            pausaRenato = false;
-            tempoEstado = 0;
-            mensagem.textContent = "Renato voltou a perseguir você!";
           }
-        } else {
-          pausaRenato = false;
+
+          if (pausaRenato) {
+            const segundosRestantes = Math.max(0, Math.ceil(10 - tempoEstado));
+            mensagem.textContent =
+              `Renato está descansando: ${segundosRestantes} segundos`;
+
+            if (tempoEstado >= 10) {
+              pausaRenato = false;
+              tempoEstado = 0;
+              mensagem.textContent = "Renato voltou a perseguir você!";
+            }
+          }
         }
 
-        // Na fase 1, Renato fica preso por 5 segundos, uma única vez.
+        // Na fase 1, Renato fica preso por 5 segundos uma vez
         const RenatoNaPassagem =
           parte === 1 &&
           Math.floor(renato.x / tamanho) === 10 &&
@@ -670,22 +789,24 @@
 
         if (RenatoNaPassagem && !RenatoJaPausou) {
           RenatoJaPausou = true;
-          passagemEstreita.RenatoEstaPassando = true;
-          passagemEstreita.tempoRestante = 5;
-          mensagem.textContent =
-            "Renato ficou preso na passagem por 5 segundos!";
+          RenatoEstaPreso = true;
+          tempoPreso = 5;
+          mensagem.textContent = "Renato ficou preso na passagem por 5 segundos!";
         }
 
-        if (passagemEstreita.RenatoEstaPassando) {
-          passagemEstreita.tempoRestante -= dt;
+        if (RenatoEstaPreso) {
+          tempoPreso -= dt;
 
-          if (passagemEstreita.tempoRestante <= 0) {
-            passagemEstreita.RenatoEstaPassando = false;
+          if (tempoPreso <= 0) {
+            RenatoEstaPreso = false;
             mensagem.textContent = "Renato conseguiu passar!";
           }
         }
-
-        if (!pausaRenato && !passagemEstreita.RenatoEstaPassando) {
+controlarSomPerseguicao(
+          !pausaRenato && !RenatoEstaPreso && !acabou
+        );
+        // Renato persegue o jogador
+        if (!pausaRenato && !RenatoEstaPreso) {
           const passo = acharProximoPasso();
 
           if (passo) {
@@ -695,74 +816,49 @@
             const difY = alvoY - renato.y;
             const distancia = Math.hypot(difX, difY);
 
-            if (distancia > 1) {
+            if (distancia > 0) {
               const movimento = Math.min(renato.velocidade * dt, distancia);
-              const movX = difX / distancia * movimento;
-              const movY = difY / distancia * movimento;
-
-              if (podeMover(renato.x + movX, renato.y, 10)) {
-                renato.x += movX;
-              }
-
-              if (podeMover(renato.x, renato.y + movY, 10)) {
-                renato.y += movY;
-              }
+              renato.x += difX / distancia * movimento;
+              renato.y += difY / distancia * movimento;
             }
           }
-
-          if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
-            acabou = true;
-            mensagem.textContent =
-              "Renato pegou você! Recomece para tentar de novo.";
-            tocarSomAssustador();
-          }
         }
 
-        const todosPegos = itens.every(item => item.pego);
-        const bonusNecessario = parte === 1 || parte === 5;
-        const podeFugir = todosPegos &&
-          (!bonusNecessario || bonusVelocidade.pego);
+        // Se Renato pegar o jogador, reinicia somente a fase atual
+        if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
+          tocarSomAssustador();
+          reiniciarFaseAtual();
+        }
 
+        // Só pode sair depois de pegar os três itens
         const saidaX = saida.x * tamanho + tamanho / 2;
         const saidaY = saida.y * tamanho + tamanho / 2;
-        const pertoDaSaida =
-          Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20;
 
-        if (!acabou && pertoDaSaida && !bloqueioSaida) {
-          if (podeFugir) {
-            bloqueioSaida = true;
-            iniciarProximaFase();
-
-            setTimeout(() => {
-              bloqueioSaida = false;
-            }, 500);
-          } else if (todosPegos && bonusNecessario) {
-            mensagem.textContent = "Pegue o item ⚡ antes de fugir!";
-          } else {
-            mensagem.textContent =
-              "A saída está trancada! Encontre os três itens.";
-          }
+        if (
+          itens.every(item => item.pego) &&
+          Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20
+        ) {
+          iniciarProximaFase();
         }
       }
+desenhar();
+      requestAnimationFrame(atualizar);
+    }
 
+    // INICIA O JOGO
+    mapa = criarMapa(parte);
+    atualizarInfo();
+    requestAnimationFrame(atualizar);
+  </script>
+</body>
+</html>
       desenhar();
       requestAnimationFrame(atualizar);
     }
 
-    document
-      .getElementById("reiniciar")
-      .addEventListener("click", reiniciarJogo);
-
+    // INICIA O JOGO
     mapa = criarMapa(parte);
     atualizarInfo();
-
-    setTimeout(() => {
-      if (!acabou && mensagem.textContent === avisoInicial) {
-        mensagem.textContent =
-          "Pegue os três itens e encontre a saída verde!";
-      }
-    }, 4000);
-
     requestAnimationFrame(atualizar);
   </script>
 </body>
