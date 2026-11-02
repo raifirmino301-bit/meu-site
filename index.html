@@ -5,77 +5,87 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fuja do louco!</title>
-  
-<style>
-  body {
-    margin: 0;
-    padding: 12px;
-    background: #08090d;
-    color: #d5d7df;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
 
-  h1 {
-    color: #e6d9d9;
-    text-shadow: 0 0 12px #8f263d;
-  }
+  <style>
+    * {
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
 
-  canvas {
-    display: block;
-    width: min(800px, 96vw);
-    height: auto;
-    margin: 12px auto;
-    border: 3px solid #542431;
-    background: #100f14;
-    box-shadow: 0 0 24px #000, 0 0 12px #6b2535;
-    touch-action: none;
-  }
+    body {
+      margin: 0;
+      padding: 12px;
+      background: #08090d;
+      color: #d5d7df;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
 
-  #mensagem {
-    min-height: 24px;
-    color: #f0c7cf;
-    font-weight: bold;
-    text-shadow: 0 0 8px #9f243f;
-  }
+    h1 {
+      color: #e6d9d9;
+      text-shadow: 0 0 12px #8f263d;
+    }
 
-  #controles {
-    display: grid;
-    grid-template: 56px 56px / 64px 64px 64px;
-    gap: 6px;
-    justify-content: center;
-    margin: 14px auto;
-  }
+    canvas {
+      display: block;
+      width: min(800px, 96vw);
+      height: auto;
+      margin: 12px auto;
+      border: 3px solid #542431;
+      background: #100f14;
+      box-shadow: 0 0 24px #000, 0 0 12px #6b2535;
+      touch-action: none;
+    }
 
-  button {
-    border: 2px solid #542431;
-    border-radius: 12px;
-    background: #24151b;
-    color: white;
-    user-select: none;
-    touch-action: none;
-  }
+    #mensagem {
+      min-height: 24px;
+      color: #f0c7cf;
+      font-weight: bold;
+      text-shadow: 0 0 8px #9f243f;
+    }
 
-  #controles button { font-size: 26px; }
+    #controles {
+      display: grid;
+      grid-template: 56px 56px / 64px 64px 64px;
+      gap: 6px;
+      justify-content: center;
+      margin: 14px auto;
+    }
 
-  #cima { grid-area: 1 / 2; }
-  #esquerda { grid-area: 2 / 1; }
-  #baixo { grid-area: 2 / 2; }
-  #direita { grid-area: 2 / 3; }
+    button {
+      border: 2px solid #542431;
+      border-radius: 12px;
+      background: #24151b;
+      color: white;
+      user-select: none;
+      touch-action: none;
+    }
 
-  #reiniciar, #musica {
-    padding: 10px 18px;
-    font-size: 16px;
-    touch-action: auto;
-  }
-</style>
+    #controles button {
+      font-size: 26px;
+    }
+
+    #cima { grid-area: 1 / 2; }
+    #esquerda { grid-area: 2 / 1; }
+    #baixo { grid-area: 2 / 2; }
+    #direita { grid-area: 2 / 3; }
+
+    #reiniciar, #musica {
+      padding: 10px 18px;
+      font-size: 16px;
+      touch-action: auto;
+    }
+
+    #reiniciar {
+      display: none;
     }
   </style>
 </head>
 <body>
   <h1>Fuja do louco!</h1>
   <div id="info"></div>
-  <div id="mensagem">fuja do namorado do Adriano o Renato! Boa sorte 🫡</div>
+  <div id="mensagem">Fuja do Renato! Boa sorte 🫡</div>
 
   <canvas id="jogo" width="800" height="600"></canvas>
 
@@ -86,17 +96,24 @@
     <button id="direita" aria-label="Direita">➡️</button>
   </div>
 
-  <p><button id="reiniciar" type="button">Recomeçar do início</button></p>
+  <p><button id="reiniciar" type="button">Começar jogo</button></p>
   <p><button id="musica" type="button">♫ Música: ligar</button></p>
 
   <script>
     "use strict";
+
+    // Impede selecionar/copiar texto e abrir o menu de contexto na página.
+    document.addEventListener("copy", evento => evento.preventDefault());
+    document.addEventListener("cut", evento => evento.preventDefault());
+    document.addEventListener("contextmenu", evento => evento.preventDefault());
 
     // ELEMENTOS DA PÁGINA
     const canvas = document.getElementById("jogo");
     const ctx = canvas.getContext("2d");
     const info = document.getElementById("info");
     const mensagem = document.getElementById("mensagem");
+    const botaoReiniciar = document.getElementById("reiniciar");
+    const botaoMusica = document.getElementById("musica");
 
     // CONFIGURAÇÕES DO JOGO
     const tamanho = 25;
@@ -115,7 +132,7 @@
     ];
 
     const temas = [
-      { chao: "#29252b", parede: "#514454", i: "#75657a" },
+      { chao: "#29252b", parede: "#514454", detalhe: "#75657a" },
       { chao: "#26343a", parede: "#46616b", detalhe: "#9bcbd3" },
       { chao: "#292a32", parede: "#555565", detalhe: "#9999aa" },
       { chao: "#383124", parede: "#77613c", detalhe: "#d6bd7b" },
@@ -141,60 +158,20 @@
 
     let parte = 1;
     let mapa = [];
-    let acabou = false;
+    let estado = "inicio"; // inicio, jogando, fim ou venceu
     let pausaRenato = false;
     let tempoEstado = 0;
     let ultimoTempo = performance.now();
     let bonusAte = 0;
-
     let notaMusical = 0;
-let musicaAtiva = false;
-let contextoMusical = null;
-let temporizadorMusical = null;
-// Som grave que toca enquanto Renato está perseguindo
-let audioPerseguicao = null;
-let osciladorPerseguicao = null;
-let volumePerseguicao = null;
-let somPerseguicaoLigado = false;
+    let musicaAtiva = false;
+    let contextoMusical = null;
+    let temporizadorMusical = null;
 
-function prepararSomPerseguicao() {
-  if (audioPerseguicao) {
-    audioPerseguicao.resume();
-    return;
-  }
+    let audioPerseguicao = null;
+    let osciladorPerseguicao = null;
+    let volumePerseguicao = null;
 
-  const AudioClass = window.AudioContext || window.webkitAudioContext;
-  if (!AudioClass) return;
-
-  audioPerseguicao = new AudioClass();
-  osciladorPerseguicao = audioPerseguicao.createOscillator();
-  volumePerseguicao = audioPerseguicao.createGain();
-
-  osciladorPerseguicao.type = "triangle";
-  osciladorPerseguicao.frequency.value = 48;
-  volumePerseguicao.gain.value = 0;
-
-  osciladorPerseguicao.connect(volumePerseguicao);
-  volumePerseguicao.connect(audioPerseguicao.destination);
-  osciladorPerseguicao.start();
-}
-
-function controlarSomPerseguicao(ligado) {
-  if (!audioPerseguicao || !volumePerseguicao) return;
-
-  audioPerseguicao.resume();
-
-  const agora = audioPerseguicao.currentTime;
-  const volume = ligado ? 0.045 : 0;
-
-  volumePerseguicao.gain.cancelScheduledValues(agora);
-  volumePerseguicao.gain.setTargetAtTime(volume, agora, 0.25);
-  somPerseguicaoLigado = ligado;
-}
-
-// O navegador libera o áudio depois do primeiro toque ou tecla
-window.addEventListener("pointerdown", prepararSomPerseguicao, { once: true });
-window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
     let RenatoJaPausou = false;
     let RenatoEstaPreso = false;
     let tempoPreso = 0;
@@ -264,13 +241,11 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
 
       return novo;
     }
-    // ATUALIZA AS INFORMAÇÕES DA FASE
+
     function atualizarInfo() {
       const coletados = itens.filter(item => item.pego).length;
       info.textContent = `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
-    }
-
-    // VERIFICA PAREDES E MOVIMENTAÇÃO
+    }// VERIFICA PAREDES E MOVIMENTAÇÃO
     function paredeEm(x, y) {
       const coluna = Math.floor(x / tamanho);
       const linha = Math.floor(y / tamanho);
@@ -285,13 +260,8 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
     }
 
     function moverJogador(dx, dy) {
-      if (podeMover(jogador.x + dx, jogador.y)) {
-        jogador.x += dx;
-      }
-
-      if (podeMover(jogador.x, jogador.y + dy)) {
-        jogador.y += dy;
-      }
+      if (podeMover(jogador.x + dx, jogador.y)) jogador.x += dx;
+      if (podeMover(jogador.x, jogador.y + dy)) jogador.y += dy;
     }
 
     // CONTROLES DO TECLADO E DOS BOTÕES NA TELA
@@ -353,9 +323,7 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       for (let i = 0; i < fila.length; i++) {
         const atual = fila[i];
 
-        if (atual.x === destino.x && atual.y === destino.y) {
-          break;
-        }
+        if (atual.x === destino.x && atual.y === destino.y) break;
 
         for (const [dx, dy] of direcoes) {
           const proximo = { x: atual.x + dx, y: atual.y + dy };
@@ -372,9 +340,7 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
         }
       }
 
-      if (!anteriores.has(chave(destino))) {
-        return null;
-      }
+      if (!anteriores.has(chave(destino))) return null;
 
       let passo = destino;
 
@@ -388,7 +354,7 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       return passo;
     }
 
-    // TOCA UM EFEITO SONORO QUANDO O RENATO PEGA O JOGADOR
+    // SOM ASSUSTADOR QUANDO RENATO PEGA O JOGADOR
     function tocarSomAssustador() {
       const AudioContextClass =
         window.AudioContext || window.webkitAudioContext;
@@ -416,7 +382,47 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       oscilador.addEventListener("ended", () => audio.close());
     }
 
-    // MÚSICA SIMPLES DO JOGO
+    // SOM CONTÍNUO DA PERSEGUIÇÃO
+    function prepararSomPerseguicao() {
+      if (audioPerseguicao) {
+        audioPerseguicao.resume();
+        return;
+      }
+
+      const AudioClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioClass) return;
+
+      audioPerseguicao = new AudioClass();
+      osciladorPerseguicao = audioPerseguicao.createOscillator();
+      volumePerseguicao = audioPerseguicao.createGain();
+
+      osciladorPerseguicao.type = "triangle";
+      osciladorPerseguicao.frequency.value = 48;
+      volumePerseguicao.gain.value = 0;
+
+      osciladorPerseguicao.connect(volumePerseguicao);
+      volumePerseguicao.connect(audioPerseguicao.destination);
+      osciladorPerseguicao.start();
+    }
+
+    function controlarSomPerseguicao(ligado) {
+      if (!audioPerseguicao || !volumePerseguicao) return;
+
+      audioPerseguicao.resume();
+
+      const agora = audioPerseguicao.currentTime;
+      volumePerseguicao.gain.cancelScheduledValues(agora);
+      volumePerseguicao.gain.setTargetAtTime(
+        ligado ? 0.045 : 0,
+        agora,
+        0.25
+      );
+    }
+
+    window.addEventListener("pointerdown", prepararSomPerseguicao, { once: true });
+    window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
+
+    // MÚSICA DO JOGO
     function tocarNotaSuave(frequencia, inicio, duracao, volume) {
       const oscilador = contextoMusical.createOscillator();
       const ganho = contextoMusical.createGain();
@@ -442,13 +448,11 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
         return;
       }
 
-      if (!contextoMusical) {
-        contextoMusical = new AudioContextClass();
-      }
+      if (!contextoMusical) contextoMusical = new AudioContextClass();
 
       contextoMusical.resume();
       musicaAtiva = true;
-      document.getElementById("musica").textContent = "♫ Música: desligar";
+      botaoMusica.textContent = "♫ Música: desligar";
 
       const notas = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 349.23];
 
@@ -472,10 +476,10 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
     function pararMusica() {
       musicaAtiva = false;
       clearTimeout(temporizadorMusical);
-      document.getElementById("musica").textContent = "♫ Música: ligar";
+      botaoMusica.textContent = "♫ Música: ligar";
     }
 
-    document.getElementById("musica").addEventListener("click", () => {
+    botaoMusica.addEventListener("click", () => {
       if (musicaAtiva) pararMusica();
       else iniciarMusica();
     });
@@ -514,15 +518,16 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
         }
       }
 
-      // Bônus de velocidade nas fases 1 e 5, depois de pegar os itens
-      const faseComBonus = parte === 1 || parte === 5;
-      const todosItensPegos = itens.every(item => item.pego);
-
-      if (faseComBonus && todosItensPegos && !bonusVelocidade.pego) {
+      // Bônus de velocidade
+      if (
+        (parte === 1 || parte === 5) &&
+        itens.every(item => item.pego) &&
+        !bonusVelocidade.pego
+      ) {
         bonusVelocidade.apareceu = true;
       }
 
-      if (faseComBonus && bonusVelocidade.apareceu && !bonusVelocidade.pego) {
+      if (bonusVelocidade.apareceu && !bonusVelocidade.pego) {
         ctx.font = "24px Arial";
         ctx.fillText(
           "⚡",
@@ -547,10 +552,7 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       ctx.font = "12px Arial";
       ctx.fillText("Renato", renato.x - 19, renato.y - 17);
 
-        controlarSomPerseguicao(
-          !pausaRenato && !RenatoEstaPreso && !acabou
-        );
-      // Escuridão com luz suave ao redor do jogador
+      // Escuridão e luz suave ao redor do jogador
       ctx.save();
       ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -568,7 +570,7 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      // Olhos vermelhos brilhantes do Renato
+      // Olhos vermelhos do Renato
       ctx.save();
       ctx.shadowColor = "#ff001e";
       ctx.shadowBlur = 14;
@@ -578,21 +580,25 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       ctx.arc(renato.x + 5, renato.y - 2, 2.5, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
-      // Tela de vitória ou fim de jogo
-      if (acabou) {
+
+      // Tela de fim de jogo ou vitória
+      if (estado === "fim" || estado === "venceu") {
         ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         ctx.textAlign = "center";
         ctx.fillStyle = "white";
         ctx.font = "bold 25px Arial";
-        ctx.fillText(mensagem.textContent, canvas.width / 2, canvas.height / 2);
+        ctx.fillText(
+          mensagem.textContent,
+          canvas.width / 2,
+          canvas.height / 2
+        );
         ctx.textAlign = "left";
       }
 
       atualizarInfo();
     }
-
     // REPOSICIONA O JOGADOR E O RENATO
     function reiniciarPosicoes() {
       jogador.x = 2.5 * tamanho;
@@ -601,7 +607,7 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       renato.y = 21.5 * tamanho;
     }
 
-    // PREPARA OS ITENS CERTOS PARA A FASE
+    // PREPARA OS ITENS DA FASE
     function configurarItensDaFase() {
       itens.forEach(item => {
         item.pego = false;
@@ -616,16 +622,13 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       itens[2].nome =
         parte === 3 ? "Chave da saída" :
         parte === 4 ? "Obra de arte" : "Pintura";
-      itens[2].emoji = parte === 3 ? "🔑" : "💵";
+      itens[2].emoji =
+        parte === 3 ? "🔑" :
+        parte === 4 ? "🖼️" : "💵";
     }
 
-    // RECOMEÇA A MESMA FASE DEPOIS QUE O RENATO PEGA O JOGADOR
-    function reiniciarFaseAtual() {
-      acabou = false;
-      mapa = criarMapa(parte);
-      reiniciarPosicoes();
-      configurarItensDaFase();
-
+    // REINICIA OS ESTADOS ESPECIAIS DA FASE
+    function reiniciarEstadosDaFase() {
       bonusVelocidade.apareceu = false;
       bonusVelocidade.pego = false;
       jogador.velocidade = velocidadeNormal;
@@ -636,17 +639,29 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       RenatoJaPausou = false;
       RenatoEstaPreso = false;
       tempoPreso = 0;
+    }
+    // RECOMEÇA A FASE ATUAL
+    function reiniciarFaseAtual() {
+      estado = "jogando";
+      mapa = criarMapa(parte);
+      reiniciarPosicoes();
+      configurarItensDaFase();
+      reiniciarEstadosDaFase();
 
       mensagem.textContent =
-        `Você foi pego! Tente de novo na fase ${parte}.`;
+        `${nomesFases[parte - 1]}: pegue os três itens e encontre a saída!`;
+
+      botaoReiniciar.style.display = "none";
       atualizarInfo();
     }
 
     // AVANÇA PARA A PRÓXIMA FASE
     function iniciarProximaFase() {
       if (parte >= 5) {
-        acabou = true;
+        estado = "venceu";
         mensagem.textContent = "Você venceu e zerou o jogo! 🏆";
+        botaoReiniciar.textContent = "Jogar de novo";
+        botaoReiniciar.style.display = "inline-block";
         return;
       }
 
@@ -654,55 +669,46 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
       mapa = criarMapa(parte);
       reiniciarPosicoes();
       configurarItensDaFase();
-
-      bonusVelocidade.apareceu = false;
-      bonusVelocidade.pego = false;
-      jogador.velocidade = velocidadeNormal;
-      bonusAte = 0;
+      reiniciarEstadosDaFase();
 
       renato.velocidade = [0, 150, 175, 200, 230, 270][parte];
-      pausaRenato = false;
-      tempoEstado = 0;
-      RenatoJaPausou = false;
-      RenatoEstaPreso = false;
-      tempoPreso = 0;
+      estado = "jogando";
 
       mensagem.textContent =
-        `${nomesFases[parte - 1]}: pegue os três itens e vá até a saída!`;
+        `${nomesFases[parte - 1]}: pegue os três itens e encontre a saída!`;
+
       atualizarInfo();
     }
-    // RECOMEÇA O JOGO INTEIRO NA FASE 1
+
+    // RECOMEÇA O JOGO DESDE A FASE 1
     function reiniciarJogo() {
       parte = 1;
-      acabou = false;
+      renato.velocidade = 150;
       mapa = criarMapa(parte);
       reiniciarPosicoes();
       configurarItensDaFase();
+      reiniciarEstadosDaFase();
 
-      bonusVelocidade.apareceu = false;
-      bonusVelocidade.pego = false;
-      jogador.velocidade = velocidadeNormal;
-      bonusAte = 0;
-
-      renato.velocidade = 150;
-      pausaRenato = false;
-      tempoEstado = 0;
-      RenatoJaPausou = false;
-      RenatoEstaPreso = false;
-      tempoPreso = 0;
-
+      estado = "jogando";
       mensagem.textContent = avisoInicial;
+      botaoReiniciar.style.display = "none";
       atualizarInfo();
     }
 
-    document.getElementById("reiniciar").addEventListener("click", reiniciarJogo);
-
+    // BOTÃO DE COMEÇAR, TENTAR DE NOVO OU JOGAR NOVAMENTE
+    botaoReiniciar.addEventListener("click", () => {
+      if (estado === "inicio" || estado === "venceu") {
+        reiniciarJogo();
+      } else if (estado === "fim") {
+        reiniciarFaseAtual();
+      }
+    });
     // ATUALIZA A PARTIDA
     function atualizar(tempoAtual) {
       const dt = Math.min((tempoAtual - ultimoTempo) / 1000, 0.05);
       ultimoTempo = tempoAtual;
 
-      if (!acabou) {
+      if (estado === "jogando") {
         // Movimento do jogador
         let dx = 0;
         let dy = 0;
@@ -791,7 +797,8 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
           RenatoJaPausou = true;
           RenatoEstaPreso = true;
           tempoPreso = 5;
-          mensagem.textContent = "Renato ficou preso na passagem por 5 segundos!";
+          mensagem.textContent =
+            "Renato ficou preso na passagem por 5 segundos!";
         }
 
         if (RenatoEstaPreso) {
@@ -802,9 +809,9 @@ window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
             mensagem.textContent = "Renato conseguiu passar!";
           }
         }
-controlarSomPerseguicao(
-          !pausaRenato && !RenatoEstaPreso && !acabou
-        );
+
+        controlarSomPerseguicao(!pausaRenato && !RenatoEstaPreso);
+
         // Renato persegue o jogador
         if (!pausaRenato && !RenatoEstaPreso) {
           const passo = acharProximoPasso();
@@ -824,41 +831,42 @@ controlarSomPerseguicao(
           }
         }
 
-        // Se Renato pegar o jogador, reinicia somente a fase atual
+        // Se Renato pegar o jogador, mostra o botão de tentar de novo
         if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
           tocarSomAssustador();
-          reiniciarFaseAtual();
+          controlarSomPerseguicao(false);
+          estado = "fim";
+          mensagem.textContent =
+            `Você foi pego! Tente de novo na fase ${parte}.`;
+          botaoReiniciar.textContent = "Tentar de novo";
+          botaoReiniciar.style.display = "inline-block";
         }
 
         // Só pode sair depois de pegar os três itens
-        const saidaX = saida.x * tamanho + tamanho / 2;
-        const saidaY = saida.y * tamanho + tamanho / 2;
+        if (estado === "jogando") {
+          const saidaX = saida.x * tamanho + tamanho / 2;
+          const saidaY = saida.y * tamanho + tamanho / 2;
 
-        if (
-          itens.every(item => item.pego) &&
-          Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20
-        ) {
-          iniciarProximaFase();
+          if (
+            itens.every(item => item.pego) &&
+            Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20
+          ) {
+            iniciarProximaFase();
+          }
         }
+      } else {
+        controlarSomPerseguicao(false);
       }
-desenhar();
-      requestAnimationFrame(atualizar);
-    }
 
-    // INICIA O JOGO
-    mapa = criarMapa(parte);
-    atualizarInfo();
-    requestAnimationFrame(atualizar);
-  </script>
-</body>
-</html>
       desenhar();
       requestAnimationFrame(atualizar);
     }
 
-    // INICIA O JOGO
+    // PREPARA A TELA INICIAL
     mapa = criarMapa(parte);
     atualizarInfo();
+    botaoReiniciar.textContent = "Começar jogo";
+    botaoReiniciar.style.display = "inline-block";
     requestAnimationFrame(atualizar);
   </script>
 </body>
