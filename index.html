@@ -4,33 +4,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>A Casa de Renato</title>
+  <title>Fuja do louco!</title>
 
   <style>
     body {
       margin: 0;
       padding: 12px;
-      background: #100d14;
-      color: white;
+      background: #00bcd4;
+      color: #062f38;
       font-family: Arial, sans-serif;
       text-align: center;
     }
 
-    h1 { color: #e8c8ff; }
+    h1 { color: #063b48; }
 
     canvas {
       display: block;
       width: min(800px, 96vw);
       height: auto;
       margin: 12px auto;
-      border: 3px solid #6c4a78;
+      border: 3px solid #087f8c;
       background: #211d22;
       touch-action: none;
     }
 
     #mensagem {
       min-height: 24px;
-      color: #ffb8c8;
+      color: #062f38;
+      font-weight: bold;
     }
 
     #controles {
@@ -42,21 +43,22 @@
     }
 
     button {
-      border: 2px solid #b995cb;
+      border: 2px solid #087f8c;
       border-radius: 12px;
-      background: #392944;
+      background: #075866;
       color: white;
       user-select: none;
       touch-action: none;
     }
 
     #controles button { font-size: 26px; }
+
     #cima { grid-area: 1 / 2; }
     #esquerda { grid-area: 2 / 1; }
     #baixo { grid-area: 2 / 2; }
     #direita { grid-area: 2 / 3; }
 
-    #reiniciar {
+    #reiniciar, #musica {
       padding: 10px 18px;
       font-size: 16px;
       touch-action: auto;
@@ -64,9 +66,9 @@
   </style>
 </head>
 <body>
-  <h1>A Casa de Renato</h1>
+  <h1>Fuja do louco!</h1>
   <div id="info"></div>
-  <div id="mensagem">Pegue os três itens e encontre a saída verde!</div>
+  <div id="mensagem">Seja mais esperto do que o Renato! Boa sorte 🫡</div>
 
   <canvas id="jogo" width="800" height="600"></canvas>
 
@@ -78,6 +80,7 @@
   </div>
 
   <p><button id="reiniciar" type="button">Recomeçar do início</button></p>
+  <p><button id="musica" type="button">♫ Música: ligar</button></p>
 
   <script>
     "use strict";
@@ -91,6 +94,8 @@
     const colunas = 32;
     const linhas = 24;
     const teclas = Object.create(null);
+
+    const avisoInicial = "Seja mais esperto do que o Renato! Boa sorte 🫡";
 
     const nomesFases = [
       "Fase 1 — A Casa de Renato",
@@ -116,18 +121,11 @@
     let ultimoTempo = performance.now();
     let bloqueioSaida = false;
 
-    const jogador = {
-      x: 62.5,
-      y: 62.5,
-      velocidade: 180
-    };
+    const jogador = { x: 62.5, y: 62.5, velocidade: 180 };
+    const velocidadeNormal = 180;
+    let bonusAte = 0;
 
-    const renato = {
-      x: 737.5,
-      y: 537.5,
-      velocidade: 150
-    };
-
+    const renato = { x: 737.5, y: 537.5, velocidade: 150 };
     const saida = { x: 29, y: 2 };
 
     const itens = [
@@ -136,8 +134,23 @@
       { nome: "Pintura", emoji: "🖼️", x: 18, y: 11, pego: false }
     ];
 
-    const fotoYarlei = new Image();
-    fotoYarlei.src = "yarlei.jpg";
+    const bonusVelocidade = {
+      x: 3,
+      y: 2,
+      apareceu: false,
+      pego: false
+    };
+
+    const passagemEstreita = {
+      RenatoEstaPassando: false,
+      tempoRestante: 0
+    };
+
+    let RenatoJaPausou = false;
+    let musicaAtiva = false;
+    let contextoMusical = null;
+    let temporizadorMusical = null;
+    let notaMusical = 0;
 
     function criarMapa(fase) {
       const novo = Array.from({ length: linhas }, (_, y) =>
@@ -193,7 +206,8 @@
         [2, 2],
         [29, 21],
         [saida.x, saida.y],
-        ...itens.map(item => [item.x, item.y])
+        ...itens.map(item => [item.x, item.y]),
+        [bonusVelocidade.x, bonusVelocidade.y]
       ];
 
       for (const [x, y] of lugaresLivres) {
@@ -203,24 +217,85 @@
       return novo;
     }
 
+    function tocarNotaSuave(frequencia, inicio, duracao, volume) {
+      const oscilador = contextoMusical.createOscillator();
+      const ganho = contextoMusical.createGain();
+
+      oscilador.type = "sine";
+      oscilador.frequency.value = frequencia;
+      ganho.gain.setValueAtTime(0.0001, inicio);
+      ganho.gain.exponentialRampToValueAtTime(volume, inicio + 0.15);
+      ganho.gain.exponentialRampToValueAtTime(0.0001, inicio + duracao);
+
+      oscilador.connect(ganho);
+      ganho.connect(contextoMusical.destination);
+      oscilador.start(inicio);
+      oscilador.stop(inicio + duracao);
+    }
+
+    function iniciarMusica() {
+      const AudioContextClass =
+        window.AudioContext || window.webkitAudioContext;
+
+      if (!AudioContextClass) {
+        mensagem.textContent = "Seu navegador não permite tocar música.";
+        return;
+      }
+
+      if (!contextoMusical) {
+        contextoMusical = new AudioContextClass();
+      }
+
+      contextoMusical.resume();
+      musicaAtiva = true;
+      document.getElementById("musica").textContent = "♫ Música: desligar";
+
+      const notas = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 349.23];
+
+      function tocarSequencia() {
+        if (!musicaAtiva) return;
+
+        const agora = contextoMusical.currentTime;
+        tocarNotaSuave(notas[notaMusical % notas.length], agora, 1.5, 0.035);
+
+        if (notaMusical % 4 === 0) {
+          tocarNotaSuave(130.81, agora, 1.8, 0.012);
+        }
+
+        notaMusical++;
+        temporizadorMusical = setTimeout(tocarSequencia, 900);
+      }
+
+      tocarSequencia();
+    }
+
+    function pararMusica() {
+      musicaAtiva = false;
+      clearTimeout(temporizadorMusical);
+      document.getElementById("musica").textContent = "♫ Música: ligar";
+    }
+
+    document.getElementById("musica").addEventListener("click", () => {
+      if (musicaAtiva) pararMusica();
+      else iniciarMusica();
+    });
+
     function atualizarInfo() {
       const coletados = itens.filter(item => item.pego).length;
-      info.textContent =
-        `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
+      info.textContent = `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
     }
 
     function paredeEm(x, y) {
       const coluna = Math.floor(x / tamanho);
       const linha = Math.floor(y / tamanho);
-
       return !mapa[linha] || mapa[linha][coluna] === "#";
     }
 
     function podeMover(x, y, raio = 9) {
       return !paredeEm(x - raio, y - raio) &&
-             !paredeEm(x + raio, y - raio) &&
-             !paredeEm(x - raio, y + raio) &&
-             !paredeEm(x + raio, y + raio);
+        !paredeEm(x + raio, y - raio) &&
+        !paredeEm(x - raio, y + raio) &&
+        !paredeEm(x + raio, y + raio);
     }
 
     function configurarBotao(id, tecla) {
@@ -283,28 +358,17 @@
       const chave = ponto => `${ponto.x},${ponto.y}`;
       const fila = [inicio];
       const anteriores = new Map();
-
       anteriores.set(chave(inicio), null);
 
-      const direcoes = [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1]
-      ];
+      const direcoes = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
       for (let i = 0; i < fila.length; i++) {
         const atual = fila[i];
 
-        if (atual.x === destino.x && atual.y === destino.y) {
-          break;
-        }
+        if (atual.x === destino.x && atual.y === destino.y) break;
 
         for (const [dx, dy] of direcoes) {
-          const proximo = {
-            x: atual.x + dx,
-            y: atual.y + dy
-          };
+          const proximo = { x: atual.x + dx, y: atual.y + dy };
 
           if (
             mapa[proximo.y]?.[proximo.x] !== " " ||
@@ -318,9 +382,7 @@
         }
       }
 
-      if (!anteriores.has(chave(destino))) {
-        return null;
-      }
+      if (!anteriores.has(chave(destino))) return null;
 
       let passo = destino;
 
@@ -350,7 +412,7 @@
       oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
 
       volume.gain.setValueAtTime(0.001, agora);
-      volume.gain.exponentialRampToValueAtTime(0.25, agora + 0.08);
+      volume.gain.exponentialRampToValueAtTime(0.18, agora + 0.08);
       volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.2);
 
       oscilador.connect(volume);
@@ -360,11 +422,11 @@
 
       oscilador.addEventListener("ended", () => audio.close());
     }
+
     function desenhar() {
       const tema = temas[parte - 1];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Desenha o chão e as paredes do labirinto.
       for (let y = 0; y < linhas; y++) {
         for (let x = 0; x < colunas; x++) {
           const px = x * tamanho;
@@ -380,136 +442,49 @@
         }
       }
 
-      // Decoração visual dos cenários.
-      if (parte === 2) {
-        // Hospital: camas, travesseiros e cruzes.
-        for (const [x, y] of [[3, 3], [14, 8], [23, 15]]) {
-          const px = x * tamanho;
-          const py = y * tamanho;
-
-          ctx.fillStyle = "#d8edf0";
-          ctx.fillRect(px, py, 58, 27);
-
-          ctx.fillStyle = "#86b6bf";
-          ctx.fillRect(px + 5, py + 5, 17, 16);
-
-          ctx.fillStyle = "#46616b";
-          ctx.fillRect(px + 2, py + 26, 5, 5);
-          ctx.fillRect(px + 51, py + 26, 5, 5);
-
-          ctx.fillStyle = "#ff6666";
-          ctx.fillRect(px + 38, py + 6, 5, 15);
-          ctx.fillRect(px + 33, py + 11, 15, 5);
-        }
-      } else if (parte === 3) {
-        // Presídio: fileiras de grades.
-        for (const [x, y] of [[3, 3], [12, 8], [21, 14], [4, 18]]) {
-          const px = x * tamanho;
-          const py = y * tamanho;
-
-          ctx.fillStyle = "#b9bbc4";
-          ctx.fillRect(px, py, 55, 4);
-          ctx.fillRect(px, py + 36, 55, 4);
-
-          for (let i = 0; i < 6; i++) {
-            ctx.fillRect(px + i * 10, py, 4, 40);
-          }
-        }
-      } else if (parte === 4) {
-        // Museu: quadros em molduras douradas.
-        const quadros = [
-          [3, 3, "#4d9c84"],
-          [13, 8, "#bf7459"],
-          [23, 15, "#6688c4"]
-        ];
-
-        for (const [x, y, cor] of quadros) {
-          const px = x * tamanho;
-          const py = y * tamanho;
-
-          ctx.fillStyle = "#e0bd67";
-          ctx.fillRect(px, py, 55, 43);
-
-          ctx.fillStyle = "#493c2b";
-          ctx.fillRect(px + 5, py + 5, 45, 33);
-
-          ctx.fillStyle = cor;
-          ctx.fillRect(px + 10, py + 10, 35, 23);
-
-          ctx.fillStyle = "#f0d99c";
-          ctx.beginPath();
-          ctx.arc(px + 27, py + 21, 7, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (parte === 5) {
-        // Terror: iluminação avermelhada e caveiras.
-        ctx.fillStyle = "rgba(150, 0, 35, 0.18)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.font = "32px Arial";
-        ctx.textAlign = "center";
-        ctx.fillStyle = "#ff617c";
-        ctx.fillText("☠", 100, 150);
-        ctx.fillText("☠", 400, 350);
-        ctx.fillText("☠", 700, 500);
-        ctx.textAlign = "left";
-      }
-
-      // Saída.
       ctx.fillStyle = "#38b764";
-      ctx.fillRect(
-        saida.x * tamanho,
-        saida.y * tamanho,
-        tamanho,
-        tamanho
-      );
-
+      ctx.fillRect(saida.x * tamanho, saida.y * tamanho, tamanho, tamanho);
       ctx.fillStyle = "white";
       ctx.font = "11px Arial";
       ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
 
-      // Itens que ainda não foram coletados.
       for (const item of itens) {
         if (!item.pego) {
           ctx.font = "20px Arial";
-          ctx.fillText(
-            item.emoji,
-            item.x * tamanho + 2,
-            item.y * tamanho + 20
-          );
+          ctx.fillText(item.emoji, item.x * tamanho + 2, item.y * tamanho + 20);
         }
       }
 
-      // Jogador.
+      const faseComBonus = parte === 1 || parte === 5;
+      const todosItensPegos = itens.every(item => item.pego);
+
+      if (faseComBonus && todosItensPegos && !bonusVelocidade.pego) {
+        bonusVelocidade.apareceu = true;
+      }
+
+      if (faseComBonus && bonusVelocidade.apareceu && !bonusVelocidade.pego) {
+        ctx.font = "24px Arial";
+        ctx.fillText(
+          "⚡",
+          bonusVelocidade.x * tamanho,
+          bonusVelocidade.y * tamanho + 22
+        );
+      }
+
       ctx.fillStyle = "#79d8ff";
       ctx.beginPath();
       ctx.arc(jogador.x, jogador.y, 10, 0, Math.PI * 2);
       ctx.fill();
 
-      // Renato.
       ctx.fillStyle = parte === 5 ? "#ff1744" : "#bd334b";
       ctx.beginPath();
-      ctx.arc(
-        renato.x,
-        renato.y,
-        parte === 5 ? 14 : 12,
-        0,
-        Math.PI * 2
-      );
+      ctx.arc(renato.x, renato.y, parte === 5 ? 14 : 12, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = "white";
       ctx.font = "12px Arial";
       ctx.fillText("Renato", renato.x - 19, renato.y - 17);
 
-      // Mostra Yarlei no cenário de terror se yarlei.jpg estiver na mesma pasta.
-      if (parte === 5 && fotoYarlei.complete && fotoYarlei.naturalWidth > 0) {
-        ctx.globalAlpha = 0.22;
-        ctx.drawImage(fotoYarlei, 360, 250, 80, 95);
-        ctx.globalAlpha = 1;
-      }
-
-      // Mensagem de vitória ou derrota.
       if (acabou) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -523,13 +498,13 @@
 
       atualizarInfo();
     }
+
     function reiniciarPosicoes() {
       jogador.x = 2.5 * tamanho;
       jogador.y = 2.5 * tamanho;
       renato.x = 29.5 * tamanho;
       renato.y = 21.5 * tamanho;
     }
-
     function iniciarProximaFase() {
       if (parte >= 5) {
         acabou = true;
@@ -545,25 +520,26 @@
         item.pego = false;
       });
 
-      if (parte === 3) {
-        itens[0].nome = "Chave principal";
-        itens[0].emoji = "🗝️";
-        itens[1].nome = "Chave da cela";
-        itens[1].emoji = "🔑";
-        itens[2].nome = "Chave da saída";
-        itens[2].emoji = "🔑";
-      } else {
-        itens[0].nome = "Diamante";
-        itens[0].emoji = "💎";
-        itens[1].nome = "Moeda";
-        itens[1].emoji = "🪙";
-        itens[2].nome = parte === 4 ? "Obra de arte" : "Pintura";
-        itens[2].emoji = "🖼️";
-      }
+      itens[0].nome = parte === 3 ? "Chave principal" : "Diamante";
+      itens[0].emoji = parte === 3 ? "🗝️" : "💎";
+      itens[1].nome = parte === 3 ? "Chave da cela" : "Moeda";
+      itens[1].emoji = parte === 3 ? "🔑" : "🪙";
+      itens[2].nome = parte === 3
+        ? "Chave da saída"
+        : parte === 4 ? "Obra de arte" : "Pintura";
+      itens[2].emoji = parte === 3 ? "🔑" : "🖼️";
+
+      bonusVelocidade.apareceu = false;
+      bonusVelocidade.pego = false;
+      jogador.velocidade = velocidadeNormal;
+      bonusAte = 0;
 
       renato.velocidade = [0, 150, 175, 200, 230, 270][parte];
       tempoEstado = 0;
       pausaRenato = false;
+      passagemEstreita.RenatoEstaPassando = false;
+      passagemEstreita.tempoRestante = 0;
+      RenatoJaPausou = false;
 
       mensagem.textContent =
         `${nomesFases[parte - 1]}: pegue os três itens e vá até a saída!`;
@@ -589,11 +565,27 @@
         item.pego = false;
       });
 
+      bonusVelocidade.apareceu = false;
+      bonusVelocidade.pego = false;
+      jogador.velocidade = velocidadeNormal;
+      bonusAte = 0;
+
       renato.velocidade = 150;
       tempoEstado = 0;
       pausaRenato = false;
-      mensagem.textContent = "Pegue os três itens e encontre a saída verde!";
+      passagemEstreita.RenatoEstaPassando = false;
+      passagemEstreita.tempoRestante = 0;
+      RenatoJaPausou = false;
+
+      mensagem.textContent = avisoInicial;
       atualizarInfo();
+
+      setTimeout(() => {
+        if (!acabou && parte === 1 && mensagem.textContent === avisoInicial) {
+          mensagem.textContent =
+            "Pegue os três itens e encontre a saída verde!";
+        }
+      }, 4000);
     }
 
     function atualizar(tempoAtual) {
@@ -617,7 +609,6 @@
           );
         }
 
-        // Coleta os itens ao encostar neles.
         for (const item of itens) {
           if (item.pego) continue;
 
@@ -631,7 +622,30 @@
           }
         }
 
-        // Renato descansa brevemente nas fases 1 a 4.
+        const faseComBonus = parte === 1 || parte === 5;
+        const todosItensPegos = itens.every(item => item.pego);
+
+        if (faseComBonus && todosItensPegos && !bonusVelocidade.pego) {
+          bonusVelocidade.apareceu = true;
+        }
+
+        if (faseComBonus && bonusVelocidade.apareceu && !bonusVelocidade.pego) {
+          const bonusX = bonusVelocidade.x * tamanho + tamanho / 2;
+          const bonusY = bonusVelocidade.y * tamanho + tamanho / 2;
+
+          if (Math.hypot(jogador.x - bonusX, jogador.y - bonusY) < 20) {
+            bonusVelocidade.pego = true;
+            jogador.velocidade = velocidadeNormal * 1.8;
+            bonusAte = performance.now() + 6000;
+            mensagem.textContent = "Velocidade extra! Corra até a saída! ⚡";
+          }
+        }
+
+        if (bonusAte && performance.now() >= bonusAte) {
+          jogador.velocidade = velocidadeNormal;
+          bonusAte = 0;
+        }
+
         if (parte < 5) {
           tempoEstado += dt;
 
@@ -648,8 +662,30 @@
           pausaRenato = false;
         }
 
-        // Renato encontra o caminho pelo labirinto até o jogador.
-        if (!pausaRenato) {
+        // Na fase 1, Renato fica preso por 5 segundos, uma única vez.
+        const RenatoNaPassagem =
+          parte === 1 &&
+          Math.floor(renato.x / tamanho) === 10 &&
+          Math.floor(renato.y / tamanho) === 7;
+
+        if (RenatoNaPassagem && !RenatoJaPausou) {
+          RenatoJaPausou = true;
+          passagemEstreita.RenatoEstaPassando = true;
+          passagemEstreita.tempoRestante = 5;
+          mensagem.textContent =
+            "Renato ficou preso na passagem por 5 segundos!";
+        }
+
+        if (passagemEstreita.RenatoEstaPassando) {
+          passagemEstreita.tempoRestante -= dt;
+
+          if (passagemEstreita.tempoRestante <= 0) {
+            passagemEstreita.RenatoEstaPassando = false;
+            mensagem.textContent = "Renato conseguiu passar!";
+          }
+        }
+
+        if (!pausaRenato && !passagemEstreita.RenatoEstaPassando) {
           const passo = acharProximoPasso();
 
           if (passo) {
@@ -676,28 +712,35 @@
 
           if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
             acabou = true;
-            mensagem.textContent = "Renato pegou você! Recomece para tentar de novo.";
+            mensagem.textContent =
+              "Renato pegou você! Recomece para tentar de novo.";
             tocarSomAssustador();
           }
         }
 
-        // Só permite sair depois de pegar os três itens.
         const todosPegos = itens.every(item => item.pego);
+        const bonusNecessario = parte === 1 || parte === 5;
+        const podeFugir = todosPegos &&
+          (!bonusNecessario || bonusVelocidade.pego);
+
         const saidaX = saida.x * tamanho + tamanho / 2;
         const saidaY = saida.y * tamanho + tamanho / 2;
         const pertoDaSaida =
           Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20;
 
         if (!acabou && pertoDaSaida && !bloqueioSaida) {
-          if (todosPegos) {
+          if (podeFugir) {
             bloqueioSaida = true;
             iniciarProximaFase();
 
             setTimeout(() => {
               bloqueioSaida = false;
             }, 500);
+          } else if (todosPegos && bonusNecessario) {
+            mensagem.textContent = "Pegue o item ⚡ antes de fugir!";
           } else {
-            mensagem.textContent = "A saída está trancada! Encontre os três itens.";
+            mensagem.textContent =
+              "A saída está trancada! Encontre os três itens.";
           }
         }
       }
@@ -712,6 +755,14 @@
 
     mapa = criarMapa(parte);
     atualizarInfo();
+
+    setTimeout(() => {
+      if (!acabou && mensagem.textContent === avisoInicial) {
+        mensagem.textContent =
+          "Pegue os três itens e encontre a saída verde!";
+      }
+    }, 4000);
+
     requestAnimationFrame(atualizar);
   </script>
 </body>
