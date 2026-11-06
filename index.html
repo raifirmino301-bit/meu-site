@@ -4,27 +4,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Fuja do louco!</title>
+  <title>Fuja do Renato!</title>
 
   <style>
     * {
+      box-sizing: border-box;
       -webkit-user-select: none;
       user-select: none;
-      -webkit-touch-callout: none;
     }
 
     body {
       margin: 0;
-      padding: 12px;
-      background: #08090d;
-      color: #d5d7df;
+      min-height: 100vh;
+      padding: 14px;
+      color: #eee8eb;
+      background: radial-gradient(ellipse at center, #21151d, #08070a 75%);
       font-family: Arial, sans-serif;
       text-align: center;
     }
 
+    main {
+      width: min(100%, 800px);
+      margin: auto;
+    }
+
     h1 {
-      color: #e6d9d9;
-      text-shadow: 0 0 12px #8f263d;
+      color: #f1dce3;
+      text-shadow: 0 0 8px #ed173e, 0 0 22px #790b21;
+    }
+
+    #info, #mensagem {
+      min-height: 24px;
     }
 
     canvas {
@@ -32,33 +42,27 @@
       width: min(800px, 96vw);
       height: auto;
       margin: 12px auto;
-      border: 3px solid #542431;
-      background: #100f14;
-      box-shadow: 0 0 24px #000, 0 0 12px #6b2535;
+      border: 3px solid #6f263b;
+      background: #09080b;
+      box-shadow: 0 0 25px #000, 0 0 18px #821b35;
       touch-action: none;
-    }
-
-    #mensagem {
-      min-height: 24px;
-      color: #f0c7cf;
-      font-weight: bold;
-      text-shadow: 0 0 8px #9f243f;
     }
 
     #controles {
       display: grid;
       grid-template: 56px 56px / 64px 64px 64px;
-      gap: 6px;
+      gap: 7px;
       justify-content: center;
       margin: 14px auto;
     }
 
     button {
-      border: 2px solid #542431;
-      border-radius: 12px;
-      background: #24151b;
+      border: 2px solid #71263c;
+      border-radius: 10px;
+      background: #29151e;
       color: white;
-      user-select: none;
+      font-size: 18px;
+      font-weight: bold;
       touch-action: none;
     }
 
@@ -71,82 +75,113 @@
     #baixo { grid-area: 2 / 2; }
     #direita { grid-area: 2 / 3; }
 
-    #reiniciar, #musica {
+    #comecar, #reiniciar, #musica {
       padding: 10px 18px;
-      font-size: 16px;
-      touch-action: auto;
+      margin: 4px;
+      cursor: pointer;
+      touch-action: manipulation;
     }
 
     #reiniciar {
       display: none;
     }
+
+    #telaAviso {
+      position: fixed;
+      z-index: 5;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: #050407f2;
+    }
+
+    #caixaAviso {
+      width: min(100%, 380px);
+      padding: 24px;
+      border: 2px solid #a32645;
+      border-radius: 12px;
+      background: #171016;
+      box-shadow: 0 0 35px #890e31;
+      line-height: 1.5;
+    }
+
+    #caixaAviso h2 {
+      color: #ff526c;
+    }
   </style>
 </head>
+
 <body>
-  <h1>Fuja do louco!</h1>
-  <div id="info"></div>
-  <div id="mensagem">Fuja do Renato! Boa sorte 🫡</div>
+  <main>
+    <h1>FUJA DO RENATO</h1>
+    <div id="info"></div>
+    <div id="mensagem">Encontre os três itens e escape!</div>
 
-  <canvas id="jogo" width="800" height="600"></canvas>
+    <canvas id="jogo" width="800" height="600"></canvas>
 
-  <div id="controles">
-    <button id="cima" aria-label="Cima">⬆️</button>
-    <button id="esquerda" aria-label="Esquerda">⬅️</button>
-    <button id="baixo" aria-label="Baixo">⬇️</button>
-    <button id="direita" aria-label="Direita">➡️</button>
+    <div id="controles">
+      <button id="cima" aria-label="Cima">▲</button>
+      <button id="esquerda" aria-label="Esquerda">◀</button>
+      <button id="baixo" aria-label="Baixo">▼</button>
+      <button id="direita" aria-label="Direita">▶</button>
+    </div>
+
+    <button id="reiniciar">Tentar de novo</button>
+    <button id="musica">♫ Música: ligar</button>
+  </main>
+
+  <div id="telaAviso">
+    <div id="caixaAviso">
+      <h2>AVISO — ELE ESTÁ PERTO</h2>
+      <p>
+        O Renato está procurando você. Pegue os itens e encontre a saída.
+        Não deixe ele chegar perto!
+      </p>
+      <button id="comecar">COMEÇAR</button>
+    </div>
   </div>
-
-  <p><button id="reiniciar" type="button">Começar jogo</button></p>
-  <p><button id="musica" type="button">♫ Música: ligar</button></p>
 
   <script>
     "use strict";
 
-    // Impede selecionar/copiar texto e abrir o menu de contexto na página.
-    document.addEventListener("copy", evento => evento.preventDefault());
-    document.addEventListener("cut", evento => evento.preventDefault());
-    document.addEventListener("contextmenu", evento => evento.preventDefault());
-
-    // ELEMENTOS DA PÁGINA
     const canvas = document.getElementById("jogo");
     const ctx = canvas.getContext("2d");
     const info = document.getElementById("info");
     const mensagem = document.getElementById("mensagem");
+    const telaAviso = document.getElementById("telaAviso");
+    const botaoComecar = document.getElementById("comecar");
     const botaoReiniciar = document.getElementById("reiniciar");
     const botaoMusica = document.getElementById("musica");
 
-    // CONFIGURAÇÕES DO JOGO
-    const tamanho = 25;
-    const colunas = 32;
-    const linhas = 24;
+    const TAMANHO = 25;
+    const COLUNAS = 32;
+    const LINHAS = 24;
     const teclas = Object.create(null);
-    const velocidadeNormal = 180;
-    const avisoInicial = "Seja mais esperto do que o Renato! Boa sorte 🫡";
 
     const nomesFases = [
-      "Fase 1 — A Casa de Renato",
-      "Fase 2 — Hospital abandonado",
-      "Fase 3 — Presídio",
-      "Fase 4 — Museu",
-      "Fase 5 — Casa de terror"
+      "A Casa de Renato",
+      "Hospital abandonado",
+      "Presídio",
+      "Museu sombrio",
+      "Casa de terror"
     ];
 
     const temas = [
       { chao: "#29252b", parede: "#514454", detalhe: "#75657a" },
-      { chao: "#26343a", parede: "#46616b", detalhe: "#9bcbd3" },
+      { chao: "#203137", parede: "#46616b", detalhe: "#9bcbd3" },
       { chao: "#292a32", parede: "#555565", detalhe: "#9999aa" },
       { chao: "#383124", parede: "#77613c", detalhe: "#d6bd7b" },
       { chao: "#21151d", parede: "#552b3b", detalhe: "#b75b75" }
     ];
 
-    const jogador = { x: 62.5, y: 62.5, velocidade: velocidadeNormal };
-    const renato = { x: 737.5, y: 537.5, velocidade: 150 };
     const saida = { x: 29, y: 2 };
 
     const itens = [
       { nome: "Diamante", emoji: "💎", x: 4, y: 20, pego: false },
-      { nome: "Moeda", emoji: "🪙", x: 27, y: 4, pego: false },
-      { nome: "Pintura", emoji: "🖼️", x: 18, y: 11, pego: false }
+      { nome: "Chave", emoji: "🗝️", x: 27, y: 4, pego: false },
+      { nome: "Bilhete", emoji: "📜", x: 18, y: 11, pego: false }
     ];
 
     const bonusVelocidade = {
@@ -156,64 +191,72 @@
       pego: false
     };
 
-    let parte = 1;
+    let fase = 1;
     let mapa = [];
-    let estado = "inicio"; // inicio, jogando, fim ou venceu
+    let estado = "inicio";
+    let ultimoTempo = 0;
+    let tempoFase = 0;
     let pausaRenato = false;
-    let tempoEstado = 0;
-    let ultimoTempo = performance.now();
+    let tempoPausa = 0;
+    let RenatoJaFicouPreso = false;
+    let RenatoEstaPreso = false;
+    let tempoPreso = 0;
     let bonusAte = 0;
-    let notaMusical = 0;
     let musicaAtiva = false;
     let contextoMusical = null;
     let temporizadorMusical = null;
+    let notaMusical = 0;
 
-    let audioPerseguicao = null;
-    let osciladorPerseguicao = null;
-    let volumePerseguicao = null;
+    let jogador = {
+      x: 62.5,
+      y: 62.5,
+      velocidade: 180
+    };
 
-    let RenatoJaPausou = false;
-    let RenatoEstaPreso = false;
-    let tempoPreso = 0;
+    let renato = {
+      x: 737.5,
+      y: 537.5,
+      velocidade: 100
+    };
 
-    // CRIA O LABIRINTO DA FASE
-    function criarMapa(fase) {
-      const novo = Array.from({ length: linhas }, (_, y) =>
-        Array.from({ length: colunas }, (_, x) =>
-          x === 0 || y === 0 || x === colunas - 1 || y === linhas - 1
+    function criarMapa(numeroFase) {
+      const novoMapa = Array.from({ length: LINHAS }, (_, y) =>
+        Array.from({ length: COLUNAS }, (_, x) =>
+          x === 0 || y === 0 ||
+          x === COLUNAS - 1 || y === LINHAS - 1
             ? "#"
             : " "
         )
       );
 
       function paredeHorizontal(y, abertura) {
-        for (let x = 2; x < colunas - 2; x++) {
-          if (x !== abertura) novo[y][x] = "#";
+        for (let x = 2; x < COLUNAS - 2; x++) {
+          if (x !== abertura) novoMapa[y][x] = "#";
         }
       }
 
       function paredeVertical(x, abertura) {
-        for (let y = 2; y < linhas - 2; y++) {
-          if (y !== abertura) novo[y][x] = "#";
+        for (let y = 2; y < LINHAS - 2; y++) {
+          if (y !== abertura) novoMapa[y][x] = "#";
         }
       }
 
-      if (fase === 1) {
+      if (numeroFase === 1) {
         paredeHorizontal(7, 10);
         paredeHorizontal(15, 23);
         paredeVertical(12, 10);
         paredeVertical(22, 16);
-      } else if (fase === 2) {
+      } else if (numeroFase === 2) {
         paredeHorizontal(5, 25);
         paredeHorizontal(10, 7);
         paredeHorizontal(15, 24);
         paredeHorizontal(20, 9);
-      } else if (fase === 3) {
+      } else if (numeroFase === 3) {
         paredeVertical(6, 18);
         paredeVertical(12, 5);
         paredeVertical(18, 18);
         paredeVertical(24, 5);
-      } else if (fase === 4) {
+      } else if (numeroFase === 4) {
         paredeHorizontal(6, 8);
         paredeHorizontal(13, 23);
         paredeHorizontal(19, 10);
@@ -236,22 +279,33 @@
       ];
 
       for (const [x, y] of casasLivres) {
-        novo[y][x] = " ";
+        novoMapa[y][x] = " ";
       }
 
-      return novo;
+      
+    function paredeEm(x, y) {
+      const coluna = Math.floor(x / TAMANHO);
+      const linha = Math.floor(y / TAMANHO);
+      return !mapa[linha] || mapa[linha][coluna] !== " ";
+    }
+for (const [x, y] of casasLivres) {
+        novoMapa[y][x] = " ";
+      }
+
+      return novoMapa;
     }
 
     function atualizarInfo() {
       const coletados = itens.filter(item => item.pego).length;
-      info.textContent = `${nomesFases[parte - 1]} — Itens: ${coletados}/3`;
-    }// VERIFICA PAREDES E MOVIMENTAÇÃO
-    function paredeEm(x, y) {
-      const coluna = Math.floor(x / tamanho);
-      const linha = Math.floor(y / tamanho);
-      return !mapa[linha] || mapa[linha][coluna] === "#";
-    }
 
+      info.textContent =
+        `Fase ${fase}/5 — ${nomesFases[fase - 1]} — Itens: ${coletados}/3`;
+    }function paredeEm(x, y) {
+  const coluna = Math.floor(x / TAMANHO);
+  const linha = Math.floor(y / TAMANHO);
+
+  return !mapa[linha] || mapa[linha][coluna] !== " ";
+}
     function podeMover(x, y, raio = 9) {
       return !paredeEm(x - raio, y - raio) &&
         !paredeEm(x + raio, y - raio) &&
@@ -260,12 +314,18 @@
     }
 
     function moverJogador(dx, dy) {
-      if (podeMover(jogador.x + dx, jogador.y)) jogador.x += dx;
-      if (podeMover(jogador.x, jogador.y + dy)) jogador.y += dy;
+      if (estado !== "jogando") return;
+
+      if (podeMover(jogador.x + dx, jogador.y)) {
+        jogador.x += dx;
+      }
+
+      if (podeMover(jogador.x, jogador.y + dy)) {
+        jogador.y += dy;
+      }
     }
 
-    // CONTROLES DO TECLADO E DOS BOTÕES NA TELA
-    function configurarBotao(id, tecla) {
+    function configurarControle(id, tecla) {
       const botao = document.getElementById(id);
 
       botao.addEventListener("pointerdown", evento => {
@@ -283,10 +343,10 @@
       botao.addEventListener("lostpointercapture", soltar);
     }
 
-    configurarBotao("cima", "arrowup");
-    configurarBotao("baixo", "arrowdown");
-    configurarBotao("esquerda", "arrowleft");
-    configurarBotao("direita", "arrowright");
+    configurarControle("cima", "arrowup");
+    configurarControle("baixo", "arrowdown");
+    configurarControle("esquerda", "arrowleft");
+    configurarControle("direita", "arrowright");
 
     window.addEventListener("keydown", evento => {
       const tecla = evento.key.toLowerCase();
@@ -301,16 +361,15 @@
       teclas[evento.key.toLowerCase()] = false;
     });
 
-    // ENCONTRA O CAMINHO DO RENATO ATÉ O JOGADOR
     function acharProximoPasso() {
       const inicio = {
-        x: Math.floor(renato.x / tamanho),
-        y: Math.floor(renato.y / tamanho)
+        x: Math.floor(renato.x / TAMANHO),
+        y: Math.floor(renato.y / TAMANHO)
       };
 
       const destino = {
-        x: Math.floor(jogador.x / tamanho),
-        y: Math.floor(jogador.y / tamanho)
+        x: Math.floor(jogador.x / TAMANHO),
+        y: Math.floor(jogador.y / TAMANHO)
       };
 
       const chave = ponto => `${ponto.x},${ponto.y}`;
@@ -323,19 +382,22 @@
       for (let i = 0; i < fila.length; i++) {
         const atual = fila[i];
 
-        if (atual.x === destino.x && atual.y === destino.y) break;
+        if (atual.x === destino.x && atual.y === destino.y) {
+          break;
+        }
 
         for (const [dx, dy] of direcoes) {
           const proximo = { x: atual.x + dx, y: atual.y + dy };
+          const chaveProximo = chave(proximo);
 
           if (
             mapa[proximo.y]?.[proximo.x] !== " " ||
-            anteriores.has(chave(proximo))
+            anteriores.has(chaveProximo)
           ) {
             continue;
           }
 
-          anteriores.set(chave(proximo), atual);
+          anteriores.set(chaveProximo, atual);
           fila.push(proximo);
         }
       }
@@ -354,76 +416,62 @@
       return passo;
     }
 
-    // SOM ASSUSTADOR QUANDO RENATO PEGA O JOGADOR
-    function tocarSomAssustador() {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
-
-      if (!AudioContextClass) return;
-
-      const audio = new AudioContextClass();
-      const agora = audio.currentTime;
-      const oscilador = audio.createOscillator();
-      const volume = audio.createGain();
-
-      oscilador.type = "sawtooth";
-      oscilador.frequency.setValueAtTime(180, agora);
-      oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.2);
-
-      volume.gain.setValueAtTime(0.001, agora);
-      volume.gain.exponentialRampToValueAtTime(0.18, agora + 0.08);
-      volume.gain.exponentialRampToValueAtTime(0.001, agora + 1.2);
-
-      oscilador.connect(volume);
-      volume.connect(audio.destination);
-      oscilador.start(agora);
-      oscilador.stop(agora + 1.2);
-
-      oscilador.addEventListener("ended", () => audio.close());
+    function reposicionarPersonagens() {
+      jogador.x = 2.5 * TAMANHO;
+      jogador.y = 2.5 * TAMANHO;
+      renato.x = 29.5 * TAMANHO;
+      renato.y = 21.5 * TAMANHO;
     }
 
-    // SOM CONTÍNUO DA PERSEGUIÇÃO
-    function prepararSomPerseguicao() {
-      if (audioPerseguicao) {
-        audioPerseguicao.resume();
-        return;
-      }
+    function prepararFase() {
+      mapa = criarMapa(fase);
+      reposicionarPersonagens();
 
+      itens.forEach(item => {
+        item.pego = false;
+      });
+
+      bonusVelocidade.apareceu = false;
+      bonusVelocidade.pego = false;
+      jogador.velocidade = 180;
+      bonusAte = 0;
+
+      pausaRenato = false;
+      tempoPausa = 0;
+      tempoFase = 0;
+      RenatoJaFicouPreso = false;
+      RenatoEstaPreso = false;
+      tempoPreso = 0;
+
+      renato.velocidade = [0, 120, 90, 120, 140, 270][fase];
+
+      atualizarInfo();
+    }
+    function tocarSomAssustador() {
       const AudioClass = window.AudioContext || window.webkitAudioContext;
       if (!AudioClass) return;
 
-      audioPerseguicao = new AudioClass();
-      osciladorPerseguicao = audioPerseguicao.createOscillator();
-      volumePerseguicao = audioPerseguicao.createGain();
+      const audio = new AudioClass();
+      const agora = audio.currentTime;
+      const oscilador = audio.createOscillator();
+      const ganho = audio.createGain();
 
-      osciladorPerseguicao.type = "triangle";
-      osciladorPerseguicao.frequency.value = 48;
-      volumePerseguicao.gain.value = 0;
+      oscilador.type = "sawtooth";
+      oscilador.frequency.setValueAtTime(180, agora);
+      oscilador.frequency.exponentialRampToValueAtTime(38, agora + 1.1);
 
-      osciladorPerseguicao.connect(volumePerseguicao);
-      volumePerseguicao.connect(audioPerseguicao.destination);
-      osciladorPerseguicao.start();
+      ganho.gain.setValueAtTime(0.001, agora);
+      ganho.gain.exponentialRampToValueAtTime(0.16, agora + 0.08);
+      ganho.gain.exponentialRampToValueAtTime(0.001, agora + 1.1);
+
+      oscilador.connect(ganho);
+      ganho.connect(audio.destination);
+      oscilador.start(agora);
+      oscilador.stop(agora + 1.1);
+      oscilador.addEventListener("ended", () => audio.close());
     }
 
-    function controlarSomPerseguicao(ligado) {
-      if (!audioPerseguicao || !volumePerseguicao) return;
-
-      audioPerseguicao.resume();
-
-      const agora = audioPerseguicao.currentTime;
-      volumePerseguicao.gain.cancelScheduledValues(agora);
-      volumePerseguicao.gain.setTargetAtTime(
-        ligado ? 0.045 : 0,
-        agora,
-        0.25
-      );
-    }
-
-    window.addEventListener("pointerdown", prepararSomPerseguicao, { once: true });
-    window.addEventListener("keydown", prepararSomPerseguicao, { once: true });
-
-    // MÚSICA DO JOGO
-    function tocarNotaSuave(frequencia, inicio, duracao, volume) {
+    function tocarNota(frequencia, inicio, duracao, volume) {
       const oscilador = contextoMusical.createOscillator();
       const ganho = contextoMusical.createGain();
 
@@ -440,34 +488,29 @@
     }
 
     function iniciarMusica() {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
+      const AudioClass = window.AudioContext || window.webkitAudioContext;
 
-      if (!AudioContextClass) {
-        mensagem.textContent = "Seu navegador não permite tocar música.";
+      if (!AudioClass) {
+        mensagem.textContent = "Este navegador não permite tocar música.";
         return;
       }
 
-      if (!contextoMusical) contextoMusical = new AudioContextClass();
+      if (!contextoMusical) contextoMusical = new AudioClass();
 
       contextoMusical.resume();
       musicaAtiva = true;
       botaoMusica.textContent = "♫ Música: desligar";
 
-      const notas = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 349.23];
+      const notas = [130.81, 155.56, 146.83, 110, 130.81, 98];
 
       function tocarSequencia() {
         if (!musicaAtiva) return;
 
         const agora = contextoMusical.currentTime;
-        tocarNotaSuave(notas[notaMusical % notas.length], agora, 1.5, 0.035);
-
-        if (notaMusical % 4 === 0) {
-          tocarNotaSuave(130.81, agora, 1.8, 0.012);
-        }
-
+        tocarNota(notas[notaMusical % notas.length], agora, 1.7, 0.045);
         notaMusical++;
-        temporizadorMusical = setTimeout(tocarSequencia, 900);
+
+        temporizadorMusical = setTimeout(tocarSequencia, 1100);
       }
 
       tocarSequencia();
@@ -483,112 +526,125 @@
       if (musicaAtiva) pararMusica();
       else iniciarMusica();
     });
-    // DESENHA O JOGO NA TELA
+
+    function desenharPessoa(x, y, cor, tamanhoPessoa, olhosVermelhos = false) {
+      ctx.save();
+      ctx.shadowColor = olhosVermelhos ? "#ff001e" : cor;
+      ctx.shadowBlur = olhosVermelhos ? 18 : 8;
+      ctx.fillStyle = cor;
+      ctx.beginPath();
+      ctx.arc(x, y, tamanhoPessoa, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (olhosVermelhos) {
+        ctx.shadowColor = "#ff001e";
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "#fff";
+        ctx.beginPath();
+        ctx.arc(x - 5, y - 3, 2, 0, Math.PI * 2);
+        ctx.arc(x + 5, y - 3, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ff1737";
+        ctx.beginPath();
+        ctx.arc(x - 5, y - 3, 1, 0, Math.PI * 2);
+        ctx.arc(x + 5, y - 3, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
     function desenhar() {
-      const tema = temas[parte - 1];
+      const tema = temas[fase - 1];
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      for (let y = 0; y < linhas; y++) {
-        for (let x = 0; x < colunas; x++) {
-          const px = x * tamanho;
-          const py = y * tamanho;
+      for (let y = 0; y < LINHAS; y++) {
+        for (let x = 0; x < COLUNAS; x++) {
+          const px = x * TAMANHO;
+          const py = y * TAMANHO;
 
           ctx.fillStyle = mapa[y][x] === "#" ? tema.parede : tema.chao;
-          ctx.fillRect(px, py, tamanho, tamanho);
+          ctx.fillRect(px, py, TAMANHO, TAMANHO);
 
           if (mapa[y][x] === "#") {
             ctx.strokeStyle = tema.detalhe;
-            ctx.strokeRect(px, py, tamanho, tamanho);
+            ctx.lineWidth = 1;
+            ctx.strokeRect(px + 1, py + 1, TAMANHO - 2, TAMANHO - 2);
           }
         }
       }
 
       // Saída
-      ctx.fillStyle = "#38b764";
-      ctx.fillRect(saida.x * tamanho, saida.y * tamanho, tamanho, tamanho);
-      ctx.fillStyle = "white";
-      ctx.font = "11px Arial";
-      ctx.fillText("SAÍDA", saida.x * tamanho - 5, saida.y * tamanho - 5);
+      ctx.fillStyle = itens.every(item => item.pego) ? "#49e878" : "#655348";
+      ctx.fillRect(saida.x * TAMANHO + 3, saida.y * TAMANHO + 3, 19, 19);
 
       // Itens
       for (const item of itens) {
-        if (!item.pego) {
-          ctx.font = "20px Arial";
-          ctx.fillText(item.emoji, item.x * tamanho + 2, item.y * tamanho + 20);
-        }
+        if (item.pego) continue;
+
+        ctx.font = "20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          item.emoji,
+          item.x * TAMANHO + TAMANHO / 2,
+          item.y * TAMANHO + 20
+        );
       }
 
-      // Bônus de velocidade
-      if (
-        (parte === 1 || parte === 5) &&
-        itens.every(item => item.pego) &&
-        !bonusVelocidade.pego
-      ) {
+      if (itens.every(item => item.pego) && (fase === 1 || fase === 5)) {
         bonusVelocidade.apareceu = true;
       }
 
       if (bonusVelocidade.apareceu && !bonusVelocidade.pego) {
-        ctx.font = "24px Arial";
+        ctx.font = "23px Arial";
+        ctx.textAlign = "center";
         ctx.fillText(
           "⚡",
-          bonusVelocidade.x * tamanho,
-          bonusVelocidade.y * tamanho + 22
+          bonusVelocidade.x * TAMANHO + TAMANHO / 2,
+          bonusVelocidade.y * TAMANHO + 21
         );
       }
 
-      // Jogador
-      ctx.fillStyle = "#79d8ff";
-      ctx.beginPath();
-      ctx.arc(jogador.x, jogador.y, 10, 0, Math.PI * 2);
-      ctx.fill();
+      desenharPessoa(jogador.x, jogador.y, "#79d8ff", 10);
+      desenharPessoa(
+        renato.x,
+        renato.y,
+        "#d62343",
+        fase === 5 ? 15 : 12,
+        true
+      );
 
-      // Renato
-      ctx.fillStyle = parte === 5 ? "#ff1744" : "#bd334b";
-      ctx.beginPath();
-      ctx.arc(renato.x, renato.y, parte === 5 ? 14 : 12, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "white";
-      ctx.font = "12px Arial";
-      ctx.fillText("Renato", renato.x - 19, renato.y - 17);
-
-      // Escuridão e luz suave ao redor do jogador
+      // Escuridão e luz ao redor do jogador
       ctx.save();
-      ctx.fillStyle = "rgba(0, 0, 0, 0.62)";
+      ctx.fillStyle = "rgba(0,0,0,0.72)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      const raioLuz = fase === 5 ? 125 : 175;
       const luz = ctx.createRadialGradient(
-        jogador.x, jogador.y, 25,
-        jogador.x, jogador.y, 190
+        jogador.x,
+        jogador.y,
+        12,
+        jogador.x,
+        jogador.y,
+        raioLuz
       );
-      luz.addColorStop(0, "rgba(255, 225, 170, 0.28)");
-      luz.addColorStop(0.55, "rgba(255, 220, 160, 0.10)");
-      luz.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+      luz.addColorStop(0, "rgba(255,220,170,0.35)");
+      luz.addColorStop(0.55, "rgba(255,220,170,0.10)");
+      luz.addColorStop(1, "rgba(0,0,0,0)");
 
       ctx.globalCompositeOperation = "lighter";
       ctx.fillStyle = luz;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      // Olhos vermelhos do Renato
-      ctx.save();
-      ctx.shadowColor = "#ff001e";
-      ctx.shadowBlur = 14;
-      ctx.fillStyle = "#ff253f";
-      ctx.beginPath();
-      ctx.arc(renato.x - 5, renato.y - 2, 2.5, 0, Math.PI * 2);
-      ctx.arc(renato.x + 5, renato.y - 2, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // Tela de fim de jogo ou vitória
       if (estado === "fim" || estado === "venceu") {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.78)";
+        ctx.fillStyle = "rgba(0,0,0,0.82)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         ctx.textAlign = "center";
-        ctx.fillStyle = "white";
-        ctx.font = "bold 25px Arial";
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 27px Arial";
         ctx.fillText(
           mensagem.textContent,
           canvas.width / 2,
@@ -596,120 +652,21 @@
         );
         ctx.textAlign = "left";
       }
-
-      atualizarInfo();
     }
-    // REPOSICIONA O JOGADOR E O RENATO
-    function reiniciarPosicoes() {
-      jogador.x = 2.5 * tamanho;
-      jogador.y = 2.5 * tamanho;
-      renato.x = 29.5 * tamanho;
-      renato.y = 21.5 * tamanho;
+    function finalizarPartida(texto, novoEstado, textoBotao) {
+      estado = novoEstado;
+      mensagem.textContent = texto;
+      botaoReiniciar.textContent = textoBotao;
+      botaoReiniciar.style.display = "inline-block";
     }
 
-    // PREPARA OS ITENS DA FASE
-    function configurarItensDaFase() {
-      itens.forEach(item => {
-        item.pego = false;
-      });
-
-      itens[0].nome = parte === 3 ? "Chave principal" : "Diamante";
-      itens[0].emoji = parte === 3 ? "🗝️" : "💎";
-
-      itens[1].nome = parte === 3 ? "Chave da cela" : "Moeda";
-      itens[1].emoji = parte === 3 ? "🔑" : "🪙";
-
-      itens[2].nome =
-        parte === 3 ? "Chave da saída" :
-        parte === 4 ? "Obra de arte" : "Pintura";
-      itens[2].emoji =
-        parte === 3 ? "🔑" :
-        parte === 4 ? "🖼️" : "💵";
-    }
-
-    // REINICIA OS ESTADOS ESPECIAIS DA FASE
-    function reiniciarEstadosDaFase() {
-      bonusVelocidade.apareceu = false;
-      bonusVelocidade.pego = false;
-      jogador.velocidade = velocidadeNormal;
-      bonusAte = 0;
-
-      pausaRenato = false;
-      tempoEstado = 0;
-      RenatoJaPausou = false;
-      RenatoEstaPreso = false;
-      tempoPreso = 0;
-    }
-    // RECOMEÇA A FASE ATUAL
-    function reiniciarFaseAtual() {
-      estado = "jogando";
-      mapa = criarMapa(parte);
-      reiniciarPosicoes();
-      configurarItensDaFase();
-      reiniciarEstadosDaFase();
-
-      mensagem.textContent =
-        `${nomesFases[parte - 1]}: pegue os três itens e encontre a saída!`;
-
-      botaoReiniciar.style.display = "none";
-      atualizarInfo();
-    }
-
-    // AVANÇA PARA A PRÓXIMA FASE
-    function iniciarProximaFase() {
-      if (parte >= 5) {
-        estado = "venceu";
-        mensagem.textContent = "Você venceu e zerou o jogo! 🏆";
-        botaoReiniciar.textContent = "Jogar de novo";
-        botaoReiniciar.style.display = "inline-block";
-        return;
-      }
-
-      parte++;
-      mapa = criarMapa(parte);
-      reiniciarPosicoes();
-      configurarItensDaFase();
-      reiniciarEstadosDaFase();
-
-      renato.velocidade = [0, 150, 175, 200, 230, 270][parte];
-      estado = "jogando";
-
-      mensagem.textContent =
-        `${nomesFases[parte - 1]}: pegue os três itens e encontre a saída!`;
-
-      atualizarInfo();
-    }
-
-    // RECOMEÇA O JOGO DESDE A FASE 1
-    function reiniciarJogo() {
-      parte = 1;
-      renato.velocidade = 150;
-      mapa = criarMapa(parte);
-      reiniciarPosicoes();
-      configurarItensDaFase();
-      reiniciarEstadosDaFase();
-
-      estado = "jogando";
-      mensagem.textContent = avisoInicial;
-      botaoReiniciar.style.display = "none";
-      atualizarInfo();
-    }
-
-    // BOTÃO DE COMEÇAR, TENTAR DE NOVO OU JOGAR NOVAMENTE
-    botaoReiniciar.addEventListener("click", () => {
-      if (estado === "inicio" || estado === "venceu") {
-        reiniciarJogo();
-      } else if (estado === "fim") {
-        reiniciarFaseAtual();
-      }
-    });
-    // ATUALIZA A PARTIDA
     function atualizar(tempoAtual) {
+      if (!ultimoTempo) ultimoTempo = tempoAtual;
+
       const dt = Math.min((tempoAtual - ultimoTempo) / 1000, 0.05);
       ultimoTempo = tempoAtual;
 
       if (estado === "jogando") {
-        // Movimento do jogador
         let dx = 0;
         let dy = 0;
 
@@ -721,17 +678,17 @@
         if (dx !== 0 || dy !== 0) {
           const distancia = Math.hypot(dx, dy);
           moverJogador(
-            dx / distancia * jogador.velocidade * dt,
-            dy / distancia * jogador.velocidade * dt
+            (dx / distancia) * jogador.velocidade * dt,
+            (dy / distancia) * jogador.velocidade * dt
           );
         }
 
-        // Coleta dos itens
+        // Coleta os itens.
         for (const item of itens) {
           if (item.pego) continue;
 
-          const itemX = item.x * tamanho + tamanho / 2;
-          const itemY = item.y * tamanho + tamanho / 2;
+          const itemX = item.x * TAMANHO + TAMANHO / 2;
+          const itemY = item.y * TAMANHO + TAMANHO / 2;
 
           if (Math.hypot(jogador.x - itemX, jogador.y - itemY) < 20) {
             item.pego = true;
@@ -740,65 +697,67 @@
           }
         }
 
-        // Bônus de velocidade nas fases 1 e 5
-        const faseComBonus = parte === 1 || parte === 5;
+        // O bônus aparece nas fases 1 e 5 depois de pegar todos os itens.
         const todosItensPegos = itens.every(item => item.pego);
 
-        if (faseComBonus && todosItensPegos && !bonusVelocidade.pego) {
+        if (
+          (fase === 1 || fase === 5) &&
+          todosItensPegos &&
+          !bonusVelocidade.pego
+        ) {
           bonusVelocidade.apareceu = true;
         }
 
-        if (faseComBonus && bonusVelocidade.apareceu && !bonusVelocidade.pego) {
-          const bonusX = bonusVelocidade.x * tamanho + tamanho / 2;
-          const bonusY = bonusVelocidade.y * tamanho + tamanho / 2;
+        if (bonusVelocidade.apareceu && !bonusVelocidade.pego) {
+          const bonusX = bonusVelocidade.x * TAMANHO + TAMANHO / 2;
+          const bonusY = bonusVelocidade.y * TAMANHO + TAMANHO / 2;
 
           if (Math.hypot(jogador.x - bonusX, jogador.y - bonusY) < 20) {
             bonusVelocidade.pego = true;
-            jogador.velocidade = velocidadeNormal * 1.8;
+            jogador.velocidade = 320;
             bonusAte = performance.now() + 6000;
             mensagem.textContent = "Velocidade extra! Corra até a saída! ⚡";
           }
         }
 
         if (bonusAte && performance.now() >= bonusAte) {
-          jogador.velocidade = velocidadeNormal;
+          jogador.velocidade = 200;
           bonusAte = 0;
         }
 
-        // Renato descansa depois de 20 segundos por 10 segundos
-        if (parte < 5) {
-          tempoEstado += dt;
+        // Renato descansa por alguns segundos nas fases 1 a 4.
+        if (fase < 5) {
+          tempoFase += dt;
 
-          if (!pausaRenato && tempoEstado >= 20) {
+          if (!pausaRenato && tempoFase >= 20) {
             pausaRenato = true;
-            tempoEstado = 0;
+            tempoPausa = 0;
           }
 
           if (pausaRenato) {
-            const segundosRestantes = Math.max(0, Math.ceil(10 - tempoEstado));
-            mensagem.textContent =
-              `Renato está descansando: ${segundosRestantes} segundos`;
+            tempoPausa += dt;
+            const faltam = Math.max(0, Math.ceil(8 - tempoPausa));
+            mensagem.textContent = `Renato está descansando: ${faltam}s`;
 
-            if (tempoEstado >= 10) {
+            if (tempoPausa >= 8) {
               pausaRenato = false;
-              tempoEstado = 0;
+              tempoFase = 0;
               mensagem.textContent = "Renato voltou a perseguir você!";
             }
           }
         }
 
-        // Na fase 1, Renato fica preso por 5 segundos uma vez
-        const RenatoNaPassagem =
-          parte === 1 &&
-          Math.floor(renato.x / tamanho) === 10 &&
-          Math.floor(renato.y / tamanho) === 7;
+        // Renato fica preso uma vez na passagem da primeira fase.
+        const renatoNaPassagem =
+          fase === 1 &&
+          Math.floor(renato.x / TAMANHO) === 10 &&
+          Math.floor(renato.y / TAMANHO) === 7;
 
-        if (RenatoNaPassagem && !RenatoJaPausou) {
-          RenatoJaPausou = true;
+        if (renatoNaPassagem && !RenatoJaFicouPreso) {
+          RenatoJaFicouPreso = true;
           RenatoEstaPreso = true;
           tempoPreso = 5;
-          mensagem.textContent =
-            "Renato ficou preso na passagem por 5 segundos!";
+          mensagem.textContent = "Renato ficou preso na passagem!";
         }
 
         if (RenatoEstaPreso) {
@@ -809,64 +768,89 @@
             mensagem.textContent = "Renato conseguiu passar!";
           }
         }
-
-        controlarSomPerseguicao(!pausaRenato && !RenatoEstaPreso);
-
-        // Renato persegue o jogador
+        // Renato persegue o jogador pelo labirinto.
         if (!pausaRenato && !RenatoEstaPreso) {
           const passo = acharProximoPasso();
 
           if (passo) {
-            const alvoX = passo.x * tamanho + tamanho / 2;
-            const alvoY = passo.y * tamanho + tamanho / 2;
+            const alvoX = passo.x * TAMANHO + TAMANHO / 2;
+            const alvoY = passo.y * TAMANHO + TAMANHO / 2;
             const difX = alvoX - renato.x;
             const difY = alvoY - renato.y;
             const distancia = Math.hypot(difX, difY);
 
             if (distancia > 0) {
               const movimento = Math.min(renato.velocidade * dt, distancia);
-              renato.x += difX / distancia * movimento;
-              renato.y += difY / distancia * movimento;
+              renato.x += (difX / distancia) * movimento;
+              renato.y += (difY / distancia) * movimento;
             }
           }
         }
 
-        // Se Renato pegar o jogador, mostra o botão de tentar de novo
+        // Se Renato alcançar o jogador, encerra a fase.
         if (Math.hypot(jogador.x - renato.x, jogador.y - renato.y) < 20) {
           tocarSomAssustador();
-          controlarSomPerseguicao(false);
-          estado = "fim";
-          mensagem.textContent =
-            `Você foi pego! Tente de novo na fase ${parte}.`;
-          botaoReiniciar.textContent = "Tentar de novo";
-          botaoReiniciar.style.display = "inline-block";
+          finalizarPartida(
+            `Renato pegou você! Tente de novo na fase ${fase}.`,
+            "fim",
+            "Tentar de novo"
+          );
         }
 
-        // Só pode sair depois de pegar os três itens
-        if (estado === "jogando") {
-          const saidaX = saida.x * tamanho + tamanho / 2;
-          const saidaY = saida.y * tamanho + tamanho / 2;
+        // A saída só funciona depois que todos os itens forem encontrados.
+        if (estado === "jogando" && todosItensPegos) {
+          const saidaX = saida.x * TAMANHO + TAMANHO / 2;
+          const saidaY = saida.y * TAMANHO + TAMANHO / 2;
 
-          if (
-            itens.every(item => item.pego) &&
-            Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20
-          ) {
-            iniciarProximaFase();
+          if (Math.hypot(jogador.x - saidaX, jogador.y - saidaY) < 20) {
+            if (fase < 5) {
+              fase++;
+              prepararFase();
+              estado = "jogando";
+              mensagem.textContent =
+                `${nomesFases[fase - 1]}: pegue os três itens e encontre a saída!`;
+            } else {
+              finalizarPartida(
+                "Você escapou e zerou o jogo! 🏆",
+                "venceu",
+                "Jogar de novo"
+              );
+            }
           }
         }
-      } else {
-        controlarSomPerseguicao(false);
       }
 
       desenhar();
       requestAnimationFrame(atualizar);
     }
 
-    // PREPARA A TELA INICIAL
-    mapa = criarMapa(parte);
+    botaoComecar.addEventListener("click", () => {
+      telaAviso.style.display = "none";
+      fase = 1;
+      prepararFase();
+      estado = "jogando";
+      mensagem.textContent =
+        `${nomesFases[fase - 1]}: pegue os três itens e encontre a saída!`;
+      ultimoTempo = performance.now();
+    });
+
+    botaoReiniciar.addEventListener("click", () => {
+      if (estado === "venceu") {
+        fase = 1;
+      }
+
+      prepararFase();
+      estado = "jogando";
+      mensagem.textContent =
+        `${nomesFases[fase - 1]}: pegue os três itens e encontre a saída!`;
+      botaoReiniciar.style.display = "none";
+      ultimoTempo = performance.now();
+    });
+
+    // Prepara o labirinto antes de começar.
+    mapa = criarMapa(fase);
     atualizarInfo();
-    botaoReiniciar.textContent = "Começar jogo";
-    botaoReiniciar.style.display = "inline-block";
+    desenhar();
     requestAnimationFrame(atualizar);
   </script>
 </body>
